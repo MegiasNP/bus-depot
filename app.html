@@ -1,1 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚌 Bus Depot Locator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #0A1628;
+            color: white;
+            overflow: hidden;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: 100vh;
+        }
+        .sidebar {
+            background: #1E293B;
+            border-right: 2px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0,212,255,0.3);
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #00D4FF;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94A3B8;
+        }
+        .section {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 0.8rem;
+            color: #00D4FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00D4FF;
+            border: none;
+            color: #0A1628;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: rgba(0,212,255,0.1);
+            border: 2px solid #00D4FF;
+            border-radius: 6px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-num {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #00D4FF;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: #94A3B8;
+            margin-top: 4px;
+        }
+        .selected-info {
+            background: rgba(255,165,0,0.1);
+            border: 2px solid #FFA500;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .selected-spot {
+            font-size: 1.5rem;
+            color: #FFA500;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 12px;
+        }
+        .input-label {
+            font-size: 0.75rem;
+            color: #94A3B8;
+            margin-bottom: 6px;
+            display: block;
+        }
+        .text-input {
+            width: 100%;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .text-input:focus {
+            outline: none;
+            border-color: #FFA500;
+        }
+        .status-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .status-btn {
+            padding: 10px;
+            border: 2px solid;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .status-btn.fit {
+            background: rgba(0,255,136,0.2);
+            border-color: #00FF88;
+            color: #00FF88;
+        }
+        .status-btn.fit.active {
+            background: #00FF88;
+            color: #0A1628;
+        }
+        .status-btn.no-fit {
+            background: rgba(255,59,92,0.2);
+            border-color: #FF3B5C;
+            color: #FF3B5C;
+        }
+        .status-btn.no-fit.active {
+            background: #FF3B5C;
+            color: white;
+        }
+        .action-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        .btn-save {
+            background: #00FF88;
+            color: #0A1628;
+        }
+        .btn-clear {
+            background: rgba(255,59,92,0.2);
+            border: 2px solid #FF3B5C;
+            color: #FF3B5C;
+        }
+        .btn-save:disabled, .btn-clear:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .bus-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .bus-item {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .bus-fleet {
+            font-weight: bold;
+            font-size: 1rem;
+            color: white;
+        }
+        .bus-spot {
+            font-size: 0.85rem;
+            color: #00D4FF;
+        }
+        .bus-status {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .bus-status.fit {
+            background: #00FF88;
+            color: #0A1628;
+        }
+        .bus-status.no-fit {
+            background: #FF3B5C;
+            color: white;
+        }
+        .map {
+            background: #000;
+            overflow: auto;
+            position: relative;
+        }
+        .canvas-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        canvas {
+            display: block;
+            cursor: pointer;
+        }
+        .upload-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0,212,255,0.1);
+            border: 3px dashed #00D4FF;
+            border-radius: 12px;
+            padding: 60px;
+            cursor: pointer;
+        }
+        .upload-prompt:hover {
+            background: rgba(0,212,255,0.2);
+            border-color: #00FF88;
+        }
+        .upload-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            color: #00D4FF;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .upload-subtext {
+            color: #94A3B8;
+            font-size: 0.9rem;
+        }
+        .zoom {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .zoom-btn {
+            width: 50px;
+            height: 50px;
+            background: #1E293B;
+            border: 2px solid #00D4FF;
+            border-radius: 8px;
+            color: #00D4FF;
+            font-size: 1.5rem;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover {
+            background: #00D4FF;
+            color: #0A1628;
+        }
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(30,41,59,0.95);
+            border: 2px solid #00D4FF;
+            border-radius: 8px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 2000;
+        }
+        .sync-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00FF88;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .sync-text {
+            font-size: 0.85rem;
+            color: #00D4FF;
+            font-weight: 600;
+        }
+        .empty-state {
+            text-align: center;
+            color: #94A3B8;
+            padding: 40px 20px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="sync-status" id="syncStatus">
+        <div class="sync-dot"></div>
+        <div class="sync-text">Ready - Local Mode</div>
+    </div>
 
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header">
+                <div class="logo">🚌</div>
+                <div class="title">BUS DEPOT</div>
+                <div class="subtitle">Fleet Management System</div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔍 Search Fleet</div>
+                <div class="search-box">
+                    <input type="text" 
+                           class="search-input" 
+                           id="searchInput" 
+                           placeholder="Enter Fleet Number..."
+                           onkeypress="if(event.key==='Enter') searchBus()">
+                    <button class="search-btn" onclick="searchBus()">→</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 Statistics</div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-num" id="totalAssigned">0</div>
+                        <div class="stat-label">ASSIGNED</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-num" id="totalFit">0</div>
+                        <div class="stat-label">FIT</div>
+                    </div>
+                </div>
+                <button class="action-btn btn-clear" onclick="clearAllAssignments()" style="margin-top: 10px;">
+                    🗑️ CLEAR ALL
+                </button>
+            </div>
+
+            <div class="section" id="assignSection" style="display:none;">
+                <div class="section-title">📝 Assign Bus</div>
+                <div class="selected-info">
+                    <div class="selected-spot" id="selectedSpot">-</div>
+                    
+                    <div class="input-group">
+                        <label class="input-label">Fleet Number</label>
+                        <input type="text" 
+                               class="text-input" 
+                               id="fleetInput" 
+                               placeholder="e.g. EHV123">
+                    </div>
+
+                    <div class="input-group">
+                        <label class="input-label">Status</label>
+                        <div class="status-toggle">
+                            <div class="status-btn fit active" id="fitBtn" onclick="selectStatus('FIT')">
+                                ✓ FIT
+                            </div>
+                            <div class="status-btn no-fit" id="noFitBtn" onclick="selectStatus('NO_FIT')">
+                                ✗ NO FIT
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="action-btn btn-save" id="saveBtn" onclick="saveAssignment()">
+                        💾 SAVE
+                    </button>
+                    <button class="action-btn btn-clear" id="clearBtn" onclick="clearAssignment()">
+                        🗑️ CLEAR SPOT
+                    </button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🚍 Assigned Buses (<span id="busCount">0</span>)</div>
+                <div class="bus-list" id="busList">
+                    <div class="empty-state">
+                        No buses assigned yet.<br>
+                        Click on a parking spot to assign a bus.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="map">
+            <div class="upload-prompt" id="uploadPrompt" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">⏳</div>
+                <div class="upload-text">LOADING...</div>
+                <div class="upload-subtext">Attempting to load image automatically</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+            </div>
+            <div class="canvas-wrapper" id="canvasWrapper" style="display:none">
+                <canvas id="canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="zoom" id="zoomControls" style="display:none">
+            <button class="zoom-btn" onclick="zoomIn()">+</button>
+            <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+            <button class="zoom-btn" onclick="zoomOut()">−</button>
+        </div>
+    </div>
+
+    <script>
+        // ==============================================
+        // CONFIGURATION - REPLACE WITH YOUR APPS SCRIPT URL
+        // ==============================================
+        const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxgnEyDAXRaoN7YsO4Aryw7kMEQzMMeQYxZqlejBFz3_ku1YawtlBVnrL3d41VSjYI/exec';
+        
+        // ==============================================
+        // PARKING SPOTS DATA - 205 spots perfectly aligned
+        // ==============================================
+        const SPOTS = [
+{ zone: 'EN', points: [[1838, 175], [1991, 175], [1991, 215], [1838, 215]] },
+{ zone: 'EN', points: [[1838, 210], [1991, 210], [1991, 253], [1838, 253]] },
+{ zone: 'EN', points: [[1836, 247], [1989, 247], [1989, 290], [1836, 290]] },
+{ zone: 'EN', points: [[1836, 285], [1981, 285], [1981, 325], [1836, 325]] },
+{ zone: 'EN', points: [[1828, 320], [1978, 320], [1978, 362], [1828, 362]] },
+{ zone: 'EN', points: [[1830, 362], [1978, 362], [1978, 397], [1830, 397]] },
+{ zone: 'EN', points: [[1911, 644], [1959, 644], [1959, 751], [1911, 751]] },
+{ zone: 'EN', points: [[1962, 641], [2015, 641], [2015, 754], [1962, 754]] },
+{ zone: 'EN', points: [[1919, 781], [1964, 781], [1964, 883], [1919, 883]] },
+{ zone: 'EN', points: [[1967, 778], [2015, 778], [2015, 893], [1967, 893]] },
+{ zone: 'EN', points: [[1916, 907], [1967, 907], [1967, 1014], [1916, 1014]] },
+{ zone: 'EN', points: [[1972, 907], [2021, 907], [2021, 1020], [1972, 1020]] },
+{ zone: 'EN', points: [[1913, 1036], [1959, 1036], [1959, 1138], [1913, 1138]] },
+{ zone: 'EN', points: [[1959, 1036], [2013, 1036], [2013, 1140], [1959, 1140]] },
+{ zone: 'EN', points: [[1919, 1151], [1962, 1151], [1962, 1258], [1919, 1258]] },
+{ zone: 'EN', points: [[1967, 1148], [2018, 1148], [2018, 1264], [1967, 1264]] },
+{ zone: 'EN', points: [[1197, 30], [1294, 30], [1294, 67], [1197, 67]] },
+{ zone: 'EN', points: [[1200, 62], [1286, 62], [1286, 102], [1200, 102]] },
+{ zone: 'EN', points: [[1195, 100], [1294, 100], [1294, 132], [1195, 132]] },
+{ zone: 'EN', points: [[1214, 180], [1323, 180], [1323, 220], [1214, 220]] },
+{ zone: 'EN', points: [[1326, 180], [1444, 180], [1444, 226], [1326, 226]] },
+{ zone: 'EN', points: [[1447, 185], [1565, 185], [1565, 231], [1447, 231]] },
+{ zone: 'EN', points: [[1211, 218], [1326, 218], [1326, 263], [1211, 263]] },
+{ zone: 'EN', points: [[1329, 223], [1447, 223], [1447, 266], [1329, 266]] },
+{ zone: 'EN', points: [[1447, 226], [1565, 226], [1565, 266], [1447, 266]] },
+{ zone: 'EN', points: [[1211, 295], [1329, 295], [1329, 341], [1211, 341]] },
+{ zone: 'EN', points: [[1334, 298], [1444, 298], [1444, 341], [1334, 341]] },
+{ zone: 'EN', points: [[1450, 301], [1568, 301], [1568, 344], [1450, 344]] },
+{ zone: 'EN', points: [[1211, 341], [1329, 341], [1329, 381], [1211, 381]] },
+{ zone: 'EN', points: [[1334, 336], [1444, 336], [1444, 381], [1334, 381]] },
+{ zone: 'EN', points: [[1450, 338], [1562, 338], [1562, 389], [1450, 389]] },
+{ zone: 'EN', points: [[1053, 435], [1171, 435], [1171, 472], [1053, 472]] },
+{ zone: 'EN', points: [[1197, 443], [1356, 443], [1356, 483], [1197, 483]] },
+{ zone: 'EN', points: [[1197, 480], [1353, 480], [1353, 518], [1197, 518]] },
+{ zone: 'EN', points: [[1200, 515], [1353, 515], [1353, 561], [1200, 561]] },
+{ zone: 'EN', points: [[1197, 553], [1356, 553], [1356, 596], [1197, 596]] },
+{ zone: 'EN', points: [[1197, 598], [1356, 598], [1356, 641], [1197, 641]] },
+{ zone: 'EN', points: [[1374, 515], [1423, 515], [1423, 633], [1374, 633]] },
+{ zone: 'EN', points: [[1420, 515], [1455, 515], [1455, 633], [1420, 633]] },
+{ zone: 'EN', points: [[1455, 521], [1490, 521], [1490, 639], [1455, 639]] },
+{ zone: 'EN', points: [[1498, 523], [1533, 523], [1533, 641], [1498, 641]] },
+{ zone: 'EN', points: [[1541, 518], [1570, 518], [1570, 644], [1541, 644]] },
+{ zone: 'EN', points: [[1576, 521], [1608, 521], [1608, 641], [1576, 641]] },
+{ zone: 'EN', points: [[1388, 751], [1423, 751], [1423, 869], [1388, 869]] },
+{ zone: 'EN', points: [[1423, 751], [1458, 751], [1458, 872], [1423, 872]] },
+{ zone: 'EN', points: [[1460, 754], [1500, 754], [1500, 877], [1460, 877]] },
+{ zone: 'EN', points: [[1506, 759], [1538, 759], [1538, 877], [1506, 877]] },
+{ zone: 'EN', points: [[1541, 762], [1573, 762], [1573, 880], [1541, 880]] },
+{ zone: 'EN', points: [[1058, 27], [1157, 27], [1157, 62], [1058, 62]] },
+{ zone: 'EN', points: [[1061, 57], [1152, 57], [1152, 94], [1061, 94]] },
+{ zone: 'EN', points: [[1055, 92], [1155, 92], [1155, 126], [1055, 126]] },
+{ zone: 'EN', points: [[868, 59], [959, 59], [959, 94], [868, 94]] },
+{ zone: 'EN', points: [[862, 92], [961, 92], [961, 132], [862, 132]] },
+{ zone: 'EN', points: [[868, 126], [961, 126], [961, 164], [868, 164]] },
+{ zone: 'EN', points: [[776, 223], [868, 223], [868, 266], [776, 266]] },
+{ zone: 'EN', points: [[870, 226], [967, 226], [967, 261], [870, 261]] },
+{ zone: 'EN', points: [[779, 261], [873, 261], [873, 303], [779, 303]] },
+{ zone: 'EN', points: [[876, 261], [964, 261], [964, 303], [876, 303]] },
+{ zone: 'EN', points: [[782, 317], [873, 317], [873, 360], [782, 360]] },
+{ zone: 'EN', points: [[878, 322], [969, 322], [969, 362], [878, 362]] },
+{ zone: 'EN', points: [[776, 360], [873, 360], [873, 403], [776, 403]] },
+{ zone: 'EN', points: [[878, 360], [969, 360], [969, 403], [878, 403]] },
+{ zone: 'EN', points: [[1061, 172], [1149, 172], [1149, 212], [1061, 212]] },
+{ zone: 'EN', points: [[1058, 212], [1152, 212], [1152, 253], [1058, 253]] },
+{ zone: 'EN', points: [[1058, 250], [1149, 250], [1149, 290], [1058, 290]] },
+{ zone: 'EN', points: [[1061, 298], [1152, 298], [1152, 336], [1061, 336]] },
+{ zone: 'EN', points: [[1055, 336], [1149, 336], [1149, 379], [1055, 379]] },
+{ zone: 'EN', points: [[932, 582], [967, 582], [967, 725], [932, 725]] },
+{ zone: 'EN', points: [[894, 582], [929, 582], [929, 719], [894, 719]] },
+{ zone: 'EN', points: [[854, 574], [894, 574], [894, 716], [854, 716]] },
+{ zone: 'EN', points: [[809, 577], [843, 577], [843, 719], [809, 719]] },
+{ zone: 'EN', points: [[774, 574], [806, 574], [806, 716], [774, 716]] },
+{ zone: 'EN', points: [[733, 577], [766, 577], [766, 719], [733, 719]] },
+{ zone: 'EN', points: [[650, 572], [688, 572], [688, 714], [650, 714]] },
+{ zone: 'EN', points: [[693, 569], [723, 569], [723, 714], [693, 714]] },
+{ zone: 'EN', points: [[648, 751], [683, 751], [683, 891], [648, 891]] },
+{ zone: 'EN', points: [[688, 751], [723, 751], [723, 896], [688, 896]] },
+{ zone: 'EN', points: [[736, 749], [768, 749], [768, 896], [736, 896]] },
+{ zone: 'EN', points: [[776, 751], [806, 751], [806, 893], [776, 893]] },
+{ zone: 'EN', points: [[811, 751], [849, 751], [849, 893], [811, 893]] },
+{ zone: 'EN', points: [[857, 754], [892, 754], [892, 896], [857, 896]] },
+{ zone: 'EN', points: [[892, 757], [929, 757], [929, 904], [892, 904]] },
+{ zone: 'EN', points: [[932, 757], [967, 757], [967, 899], [932, 899]] },
+{ zone: 'EN', points: [[674, 934], [709, 934], [709, 1100], [674, 1100]] },
+{ zone: 'EN', points: [[717, 936], [747, 936], [747, 1097], [717, 1097]] },
+{ zone: 'EN', points: [[752, 942], [784, 942], [784, 1100], [752, 1100]] },
+{ zone: 'EN', points: [[790, 939], [830, 939], [830, 1100], [790, 1100]] },
+{ zone: 'EN', points: [[827, 942], [865, 942], [865, 1103], [827, 1103]] },
+{ zone: 'EN', points: [[870, 944], [902, 944], [902, 1103], [870, 1103]] },
+{ zone: 'EN', points: [[908, 944], [935, 944], [935, 1105], [908, 1105]] },
+{ zone: 'EN', points: [[943, 942], [978, 942], [978, 1105], [943, 1105]] },
+{ zone: 'EN', points: [[605, 684], [642, 684], [642, 829], [605, 829]] },
+{ zone: 'EN', points: [[573, 684], [602, 684], [602, 832], [573, 832]] },
+{ zone: 'EN', points: [[532, 682], [567, 682], [567, 829], [532, 829]] },
+{ zone: 'EN', points: [[538, 923], [573, 923], [573, 1073], [538, 1073]] },
+{ zone: 'EN', points: [[583, 920], [610, 920], [610, 1079], [583, 1079]] },
+{ zone: 'EN', points: [[613, 923], [648, 923], [648, 1073], [613, 1073]] },
+{ zone: 'EN', points: [[589, 223], [683, 223], [683, 269], [589, 269]] },
+{ zone: 'EN', points: [[591, 263], [680, 263], [680, 309], [591, 309]] },
+{ zone: 'EN', points: [[589, 303], [683, 303], [683, 346], [589, 346]] },
+{ zone: 'EN', points: [[591, 344], [685, 344], [685, 387], [591, 387]] },
+{ zone: 'EN', points: [[589, 379], [685, 379], [685, 427], [589, 427]] },
+{ zone: 'EN', points: [[495, 220], [589, 220], [589, 266], [495, 266]] },
+{ zone: 'EN', points: [[497, 266], [591, 266], [591, 306], [497, 306]] },
+{ zone: 'EN', points: [[500, 301], [589, 301], [589, 341], [500, 341]] },
+{ zone: 'EN', points: [[500, 344], [591, 344], [591, 384], [500, 384]] },
+{ zone: 'EN', points: [[503, 376], [586, 376], [586, 421], [503, 421]] },
+{ zone: 'EN', points: [[404, 220], [500, 220], [500, 266], [404, 266]] },
+{ zone: 'EN', points: [[404, 261], [495, 261], [495, 306], [404, 306]] },
+{ zone: 'EN', points: [[404, 306], [497, 306], [497, 344], [404, 344]] },
+{ zone: 'EN', points: [[398, 341], [495, 341], [495, 376], [398, 376]] },
+{ zone: 'EN', points: [[404, 381], [500, 381], [500, 419], [404, 419]] },
+{ zone: 'EN', points: [[307, 255], [404, 255], [404, 298], [307, 298]] },
+{ zone: 'EN', points: [[275, 78], [374, 78], [374, 118], [275, 118]] },
+{ zone: 'EN', points: [[275, 118], [379, 118], [379, 153], [275, 153]] },
+{ zone: 'EN', points: [[275, 148], [377, 148], [377, 188], [275, 188]] },
+{ zone: 'EN', points: [[178, 78], [280, 78], [280, 118], [178, 118]] },
+{ zone: 'EN', points: [[178, 108], [280, 108], [280, 148], [178, 148]] },
+{ zone: 'EN', points: [[178, 145], [280, 145], [280, 183], [178, 183]] },
+{ zone: 'EN', points: [[25, 185], [119, 185], [119, 244], [25, 244]] },
+{ zone: 'EN', points: [[114, 188], [205, 188], [205, 250], [114, 250]] },
+{ zone: 'EN', points: [[25, 239], [119, 239], [119, 287], [25, 287]] },
+{ zone: 'EN', points: [[125, 242], [213, 242], [213, 293], [125, 293]] },
+{ zone: 'EN', points: [[25, 285], [117, 285], [117, 338], [25, 338]] },
+{ zone: 'EN', points: [[122, 287], [211, 287], [211, 341], [122, 341]] },
+{ zone: 'EN', points: [[25, 338], [117, 338], [117, 384], [25, 384]] },
+{ zone: 'EN', points: [[119, 338], [211, 338], [211, 387], [119, 387]] },
+{ zone: 'EN', points: [[25, 381], [122, 381], [122, 430], [25, 430]] },
+{ zone: 'EN', points: [[125, 381], [216, 381], [216, 432], [125, 432]] },
+{ zone: 'EN', points: [[20, 427], [114, 427], [114, 480], [20, 480]] },
+{ zone: 'EN', points: [[119, 430], [213, 430], [213, 483], [119, 483]] },
+{ zone: 'EN', points: [[25, 480], [114, 480], [114, 529], [25, 529]] },
+{ zone: 'EN', points: [[119, 486], [211, 486], [211, 534], [119, 534]] },
+{ zone: 'EN', points: [[25, 526], [117, 526], [117, 577], [25, 577]] },
+{ zone: 'EN', points: [[119, 531], [213, 531], [213, 577], [119, 577]] },
+{ zone: 'EN', points: [[20, 574], [119, 574], [119, 625], [20, 625]] },
+{ zone: 'EN', points: [[119, 574], [219, 574], [219, 633], [119, 633]] },
+{ zone: 'EN', points: [[23, 628], [119, 628], [119, 674], [23, 674]] },
+{ zone: 'EN', points: [[117, 628], [213, 628], [213, 674], [117, 674]] },
+{ zone: 'EN', points: [[17, 674], [119, 674], [119, 719], [17, 719]] },
+{ zone: 'EN', points: [[117, 676], [219, 676], [219, 725], [117, 725]] },
+{ zone: 'EN', points: [[23, 725], [119, 725], [119, 775], [23, 775]] },
+{ zone: 'EN', points: [[122, 725], [213, 725], [213, 775], [122, 775]] },
+{ zone: 'EN', points: [[20, 773], [119, 773], [119, 821], [20, 821]] },
+{ zone: 'EN', points: [[119, 773], [221, 773], [221, 824], [119, 824]] },
+{ zone: 'EN', points: [[25, 824], [119, 824], [119, 877], [25, 877]] },
+{ zone: 'EN', points: [[117, 824], [219, 824], [219, 877], [117, 877]] },
+{ zone: 'EN', points: [[25, 872], [119, 872], [119, 923], [25, 923]] },
+{ zone: 'EN', points: [[122, 877], [213, 877], [213, 920], [122, 920]] },
+{ zone: 'EN', points: [[23, 923], [122, 923], [122, 971], [23, 971]] },
+{ zone: 'EN', points: [[127, 920], [216, 920], [216, 966], [127, 966]] },
+{ zone: 'EN', points: [[17, 969], [117, 969], [117, 1022], [17, 1022]] },
+{ zone: 'EN', points: [[125, 969], [216, 969], [216, 1022], [125, 1022]] },
+{ zone: 'EN', points: [[12, 1022], [122, 1022], [122, 1068], [12, 1068]] },
+{ zone: 'EN', points: [[122, 1017], [216, 1017], [216, 1062], [122, 1062]] },
+{ zone: 'EN', points: [[9, 1070], [117, 1070], [117, 1116], [9, 1116]] },
+{ zone: 'EN', points: [[119, 1070], [216, 1070], [216, 1113], [119, 1113]] },
+{ zone: 'EN', points: [[219, 861], [267, 861], [267, 944], [219, 944]] },
+{ zone: 'EN', points: [[267, 864], [315, 864], [315, 952], [267, 952]] },
+{ zone: 'EN', points: [[312, 864], [358, 864], [358, 947], [312, 947]] },
+{ zone: 'EN', points: [[219, 942], [267, 942], [267, 1033], [219, 1033]] },
+{ zone: 'EN', points: [[272, 947], [312, 947], [312, 1036], [272, 1036]] },
+{ zone: 'EN', points: [[315, 947], [366, 947], [366, 1038], [315, 1038]] },
+{ zone: 'EN', points: [[221, 1033], [264, 1033], [264, 1113], [221, 1113]] },
+{ zone: 'EN', points: [[270, 1033], [318, 1033], [318, 1121], [270, 1121]] },
+{ zone: 'EN', points: [[320, 1030], [358, 1030], [358, 1121], [320, 1121]] },
+{ zone: 'EN', points: [[1897, 1277], [1948, 1277], [1948, 1379], [1897, 1379]] },
+{ zone: 'EN', points: [[1849, 1280], [1897, 1280], [1897, 1379], [1849, 1379]] },
+{ zone: 'EN', points: [[1793, 1272], [1844, 1272], [1844, 1376], [1793, 1376]] },
+{ zone: 'EN', points: [[1742, 1274], [1793, 1274], [1793, 1379], [1742, 1379]] },
+{ zone: 'EN', points: [[1691, 1272], [1736, 1272], [1736, 1374], [1691, 1374]] },
+{ zone: 'EN', points: [[1637, 1269], [1686, 1269], [1686, 1374], [1637, 1374]] },
+{ zone: 'EN', points: [[1586, 1266], [1635, 1266], [1635, 1371], [1586, 1371]] },
+{ zone: 'EN', points: [[1530, 1264], [1589, 1264], [1589, 1368], [1530, 1368]] },
+{ zone: 'EN', points: [[1482, 1264], [1527, 1264], [1527, 1371], [1482, 1371]] },
+{ zone: 'EN', points: [[1431, 1258], [1482, 1258], [1482, 1368], [1431, 1368]] },
+{ zone: 'EN', points: [[1203, 636], [1246, 636], [1246, 727], [1203, 727]] },
+{ zone: 'EN', points: [[1248, 636], [1289, 636], [1289, 730], [1248, 730]] },
+{ zone: 'EN', points: [[1334, 636], [1372, 636], [1372, 735], [1334, 735]] },
+{ zone: 'EN', points: [[1200, 735], [1350, 735], [1350, 775], [1200, 775]] },
+{ zone: 'EN', points: [[1200, 773], [1353, 773], [1353, 813], [1200, 813]] },
+{ zone: 'EN', points: [[1200, 810], [1348, 810], [1348, 848], [1200, 848]] },
+{ zone: 'EN', points: [[1200, 843], [1345, 843], [1345, 883], [1200, 883]] },
+{ zone: 'EN', points: [[1200, 883], [1353, 883], [1353, 923], [1200, 923]] },
+{ zone: 'EN', points: [[1195, 920], [1350, 920], [1350, 958], [1195, 958]] },
+{ zone: 'EN', points: [[1195, 955], [1358, 955], [1358, 998], [1195, 998]] },
+{ zone: 'EN', points: [[1197, 990], [1361, 990], [1361, 1030], [1197, 1030]] },
+{ zone: 'EN', points: [[1200, 1025], [1353, 1025], [1353, 1065], [1200, 1065]] },
+{ zone: 'EN', points: [[1200, 1065], [1356, 1065], [1356, 1108], [1200, 1108]] },
+{ zone: 'EN', points: [[1195, 1097], [1356, 1097], [1356, 1143], [1195, 1143]] },
+{ zone: 'EN', points: [[1200, 1135], [1356, 1135], [1356, 1175], [1200, 1175]] },
+{ zone: 'EN', points: [[1195, 1170], [1356, 1170], [1356, 1218], [1195, 1218]] },
+{ zone: 'EN', points: [[1195, 1207], [1358, 1207], [1358, 1253], [1195, 1253]] },
+{ zone: 'EN', points: [[1200, 1242], [1350, 1242], [1350, 1290], [1200, 1290]] },
+{ zone: 'EN', points: [[1205, 1280], [1358, 1280], [1358, 1323], [1205, 1323]] },
+{ zone: 'EN', points: [[1200, 1312], [1361, 1312], [1361, 1365], [1200, 1365]] },
+{ zone: 'EN', points: [[433, 140], [524, 140], [524, 185], [433, 185]] },
+{ zone: 'EN', points: [[527, 145], [613, 145], [613, 185], [527, 185]] },
+{ zone: 'EN', points: [[1800, 508], [1804, 560], [1675, 599], [1678, 547]] },
+{ zone: 'EN', points: [[1800, 560], [1807, 613], [1675, 651], [1678, 599]] },
+{ zone: 'EN', points: [[1804, 609], [1800, 665], [1671, 700], [1668, 651]] },
+{ zone: 'EN', points: [[1804, 665], [1800, 714], [1671, 752], [1671, 703]] },
+{ zone: 'EN', points: [[1804, 710], [1797, 770], [1675, 801], [1675, 752]] },
+{ zone: 'EN', points: [[1804, 763], [1797, 822], [1671, 857], [1668, 804]] },
+{ zone: 'EN', points: [[1804, 818], [1804, 874], [1668, 909], [1668, 860]] },
+{ zone: 'EN', points: [[1797, 871], [1797, 920], [1671, 958], [1664, 909]] },
+{ zone: 'EN', points: [[1797, 926], [1793, 979], [1678, 1007], [1668, 958]] },
+{ zone: 'EN', points: [[1793, 975], [1793, 1028], [1678, 1066], [1671, 1014]] },
+{ zone: 'EN', points: [[1797, 1031], [1800, 1083], [1675, 1118], [1671, 1066]] },
+{ zone: 'EN', points: [[1797, 1076], [1804, 1136], [1678, 1167], [1668, 1115]] },
+{ zone: 'EN', points: [[1807, 1136], [1804, 1181], [1671, 1219], [1671, 1167]] },
+{ zone: 'EN', points: [[1570, 881], [1574, 926], [1469, 986], [1473, 937]] },
+{ zone: 'EN', points: [[1574, 951], [1577, 993], [1476, 1055], [1469, 1007]] },
+{ zone: 'EN', points: [[1567, 1021], [1577, 1066], [1480, 1122], [1466, 1073]] },
+{ zone: 'EN', points: [[1574, 1090], [1577, 1129], [1480, 1191], [1476, 1139]] }
+        ];
+
+        // State
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const assignments = {};
+        let selectedSpotIndex = null;
+        let selectedStatus = 'FIT';
+        let scale = 1;
+        let img = null;
+
+        // File input handler - TRY AUTO-LOAD, FALLBACK TO MANUAL
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Try to auto-load the image from GitHub
+            try {
+                const response = await fetch('yard_layout_NP.jpg');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onload = ev => {
+                        img = new Image();
+                        img.onload = () => {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            
+                            const maxW = window.innerWidth - 340;
+                            const maxH = window.innerHeight - 40;
+                            scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                            canvas.style.width = (img.width * scale) + 'px';
+                            canvas.style.height = (img.height * scale) + 'px';
+                            
+                            document.getElementById('uploadPrompt').style.display = 'none';
+                            document.getElementById('canvasWrapper').style.display = 'block';
+                            document.getElementById('zoomControls').style.display = 'flex';
+                            
+                            loadData();
+                            draw();
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(blob);
+                } else {
+                    // Image not found, enable manual upload
+                    setupManualUpload();
+                }
+            } catch (error) {
+                // Auto-load failed, enable manual upload
+                setupManualUpload();
+            }
+        });
+        
+        function setupManualUpload() {
+            document.getElementById('fileInput').addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    img = new Image();
+                    img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        const maxW = window.innerWidth - 340;
+                        const maxH = window.innerHeight - 40;
+                        scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                        canvas.style.width = (img.width * scale) + 'px';
+                        canvas.style.height = (img.height * scale) + 'px';
+                        
+                        document.getElementById('uploadPrompt').style.display = 'none';
+                        document.getElementById('canvasWrapper').style.display = 'block';
+                        document.getElementById('zoomControls').style.display = 'flex';
+                        
+                        loadData();
+                        draw();
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Load data from Google Sheets
+        const loadData = async () => {
+            try {
+                const response = await fetch(SHEET_URL);
+                const data = await response.json();
+                
+                // Clear current assignments
+                Object.keys(assignments).forEach(key => delete assignments[key]);
+                
+                // Load from Google Sheets
+                data.forEach(row => {
+                    if (row.SpotIndex !== '' && row.SpotIndex !== null) {
+                        assignments[row.SpotIndex] = {
+                            fleetNumber: row.FleetNumber,
+                            status: row.Status
+                        };
+                    }
+                });
+                
+                console.log('✅ Loaded from Google Sheets:', Object.keys(assignments).length, 'assignments');
+            } catch (error) {
+                console.log('⚠️ Could not load from Google Sheets, using local storage');
+                const saved = localStorage.getItem('busDepotData');
+                if (saved) {
+                    Object.assign(assignments, JSON.parse(saved));
+                }
+            }
+            updateUI();
+        };
+
+        // Save to Google Sheets
+        const saveData = async () => {
+            // Always save to localStorage as backup
+            localStorage.setItem('busDepotData', JSON.stringify(assignments));
+            
+            // Also save to Google Sheets (no await - fire and forget)
+            try {
+                // This will be called by saveAssignment with specific data
+            } catch (error) {
+                console.log('⚠️ Could not save to Google Sheets');
+            }
+        };
+        
+        // Save single assignment to Google Sheets
+        const saveToSheet = async (spotIndex, fleetNumber, status) => {
+            try {
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        spotIndex: spotIndex,
+                        fleetNumber: fleetNumber,
+                        status: status
+                    })
+                });
+                console.log('✅ Saved to Google Sheets:', fleetNumber, 'at spot', spotIndex);
+            } catch (error) {
+                console.log('⚠️ Could not save to Google Sheets:', error);
+            }
+        };
+        
+        // Delete assignment from Google Sheets
+        const deleteFromSheet = async (spotIndex) => {
+            try {
+                await fetch(SHEET_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        spotIndex: spotIndex,
+                        fleetNumber: '',
+                        status: ''
+                    })
+                });
+                console.log('✅ Deleted from Google Sheets: spot', spotIndex);
+            } catch (error) {
+                console.log('⚠️ Could not delete from Google Sheets:', error);
+            }
+        };
+
+        // Canvas click handler
+        canvas.addEventListener('click', e => {
+            if (!img) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            for (let i = 0; i < SPOTS.length; i++) {
+                if (pointInPolygon(x, y, SPOTS[i].points)) {
+                    selectSpot(i);
+                    return;
+                }
+            }
+            
+            deselectSpot();
+        });
+
+        const pointInPolygon = (x, y, points) => {
+            let inside = false;
+            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+                const xi = points[i][0], yi = points[i][1];
+                const xj = points[j][0], yj = points[j][1];
+                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        };
+
+        const selectSpot = (index) => {
+            selectedSpotIndex = index;
+            const spot = SPOTS[index];
+            const assignment = assignments[index];
+            
+            document.getElementById('assignSection').style.display = 'block';
+            document.getElementById('selectedSpot').textContent = `Spot ${spot.zone}-${String(index + 1).padStart(3, '0')}`;
+            
+            if (assignment) {
+                document.getElementById('fleetInput').value = assignment.fleetNumber;
+                selectStatus(assignment.status);
+            } else {
+                document.getElementById('fleetInput').value = '';
+                selectStatus('FIT');
+            }
+            
+            draw();
+        };
+
+        const deselectSpot = () => {
+            selectedSpotIndex = null;
+            document.getElementById('assignSection').style.display = 'none';
+            draw();
+        };
+
+        const selectStatus = (status) => {
+            selectedStatus = status;
+            document.getElementById('fitBtn').classList.toggle('active', status === 'FIT');
+            document.getElementById('noFitBtn').classList.toggle('active', status === 'NO_FIT');
+        };
+
+        const saveAssignment = async () => {
+            if (selectedSpotIndex === null) return;
+            
+            const fleetNumber = document.getElementById('fleetInput').value.trim().toUpperCase();
+            if (!fleetNumber) {
+                alert('⚠️ Please enter a fleet number');
+                return;
+            }
+            
+            assignments[selectedSpotIndex] = {
+                fleetNumber,
+                status: selectedStatus
+            };
+            
+            // Save to localStorage
+            saveData();
+            
+            // Save to Google Sheets
+            await saveToSheet(selectedSpotIndex, fleetNumber, selectedStatus);
+            
+            updateUI();
+            draw();
+            
+            alert(`✅ ${fleetNumber} assigned to spot ${selectedSpotIndex + 1}`);
+        };
+
+        const clearAssignment = async () => {
+            if (selectedSpotIndex === null) return;
+            
+            if (confirm('Clear this assignment?')) {
+                const spotNum = selectedSpotIndex + 1;
+                const spotToDelete = selectedSpotIndex;
+                
+                delete assignments[selectedSpotIndex];
+                document.getElementById('fleetInput').value = '';
+                
+                // Save to localStorage
+                saveData();
+                
+                // Delete from Google Sheets
+                await deleteFromSheet(spotToDelete);
+                
+                updateUI();
+                
+                // Deselect the spot
+                selectedSpotIndex = null;
+                document.getElementById('assignSection').style.display = 'none';
+                
+                draw();
+                alert(`✅ Spot ${spotNum} cleared successfully`);
+            }
+        };
+
+        const clearAllAssignments = async () => {
+            const count = Object.keys(assignments).length;
+            if (count === 0) {
+                alert('⚠️ No assignments to clear');
+                return;
+            }
+            
+            if (confirm(`Clear ALL ${count} bus assignments?`)) {
+                // Get all spot indices before clearing
+                const spotIndicesToDelete = Object.keys(assignments);
+                
+                // Clear all assignments
+                Object.keys(assignments).forEach(key => delete assignments[key]);
+                
+                // Clear input field
+                document.getElementById('fleetInput').value = '';
+                
+                // Deselect any selected spot
+                selectedSpotIndex = null;
+                document.getElementById('assignSection').style.display = 'none';
+                
+                // Save to localStorage
+                saveData();
+                
+                // Delete all from Google Sheets
+                for (const spotIndex of spotIndicesToDelete) {
+                    await deleteFromSheet(spotIndex);
+                }
+                
+                updateUI();
+                draw();
+                
+                alert(`✅ All ${count} assignments cleared`);
+            }
+        };
+
+        const searchBus = () => {
+            const query = document.getElementById('searchInput').value.trim().toUpperCase();
+            if (!query) return;
+            
+            for (let [index, assignment] of Object.entries(assignments)) {
+                if (assignment.fleetNumber === query) {
+                    selectSpot(parseInt(index));
+                    draw();
+                    return;
+                }
+            }
+            
+            alert(`❌ Bus ${query} not found`);
+        };
+
+        const updateUI = () => {
+            const assignedCount = Object.keys(assignments).length;
+            const fitCount = Object.values(assignments).filter(a => a.status === 'FIT').length;
+            
+            document.getElementById('totalAssigned').textContent = assignedCount;
+            document.getElementById('totalFit').textContent = fitCount;
+            document.getElementById('busCount').textContent = assignedCount;
+            
+            const busList = document.getElementById('busList');
+            if (assignedCount === 0) {
+                busList.innerHTML = `
+                    <div class="empty-state">
+                        No buses assigned yet.<br>
+                        Click on a parking spot to assign a bus.
+                    </div>
+                `;
+            } else {
+                const items = Object.entries(assignments)
+                    .map(([index, assignment]) => {
+                        const spot = SPOTS[index];
+                        return `
+                            <div class="bus-item" onclick="selectSpot(${index})">
+                                <div>
+                                    <div class="bus-fleet">${assignment.fleetNumber}</div>
+                                    <div class="bus-spot">${spot.zone}-${String(parseInt(index) + 1).padStart(3, '0')}</div>
+                                </div>
+                                <div class="bus-status ${assignment.status.toLowerCase().replace('_', '-')}">${assignment.status}</div>
+                            </div>
+                        `;
+                    })
+                    .join('');
+                busList.innerHTML = items;
+            }
+        };
+
+        const draw = () => {
+            if (!img) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            SPOTS.forEach((spot, index) => {
+                const assignment = assignments[index];
+                const isSelected = index === selectedSpotIndex;
+                
+                // Determine color
+                let fillColor, strokeColor;
+                if (isSelected) {
+                    fillColor = 'rgba(255,165,0,0.5)';
+                    strokeColor = '#FFA500';
+                } else if (assignment) {
+                    if (assignment.status === 'FIT') {
+                        fillColor = 'rgba(0,255,136,0.4)';
+                        strokeColor = '#00FF88';
+                    } else {
+                        fillColor = 'rgba(255,59,92,0.4)';
+                        strokeColor = '#FF3B5C';
+                    }
+                } else {
+                    fillColor = 'rgba(0,212,255,0.2)';
+                    strokeColor = '#00D4FF';
+                }
+                
+                // Draw spot
+                ctx.fillStyle = fillColor;
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = isSelected ? 6 : 3;
+                
+                ctx.beginPath();
+                ctx.moveTo(spot.points[0][0], spot.points[0][1]);
+                for (let i = 1; i < 4; i++) {
+                    ctx.lineTo(spot.points[i][0], spot.points[i][1]);
+                }
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                
+                // Draw text
+                const cx = spot.points.reduce((sum, p) => sum + p[0], 0) / 4;
+                const cy = spot.points.reduce((sum, p) => sum + p[1], 0) / 4;
+                
+                const text = assignment ? assignment.fleetNumber : spot.zone;
+                
+                ctx.save();
+                ctx.translate(cx, cy);
+                
+                // Calculate spot dimensions
+                const width = Math.abs(spot.points[1][0] - spot.points[0][0]);
+                const height = Math.abs(spot.points[2][1] - spot.points[1][1]);
+                
+                // Smart rotation based on parking orientation:
+                // - If height > width → VERTICAL parking → Rotate text 90° (a lo largo)
+                // - If width > height → HORIZONTAL parking → Keep text horizontal (a lo ancho)
+                const isVerticalParking = height > width;
+                
+                if (isVerticalParking) {
+                    // Vertical/narrow parking - rotate text 90° to run along the length
+                    ctx.rotate(Math.PI / 2);
+                }
+                // else: horizontal/wide parking - no rotation, text stays horizontal
+                
+                // Use FIXED font size for consistency
+                const fontSize = 16; // Increased size for better visibility
+                
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Draw text with black outline for better visibility
+                ctx.strokeText(text, 0, 0);
+                ctx.fillText(text, 0, 0);
+                
+                ctx.restore();
+            });
+        };
+
+        const zoomIn = () => {
+            scale = Math.min(scale * 1.2, 3);
+            applyZoom();
+        };
+
+        const zoomOut = () => {
+            scale = Math.max(scale / 1.2, 0.3);
+            applyZoom();
+        };
+
+        const resetZoom = () => {
+            const maxW = window.innerWidth - 340;
+            const maxH = window.innerHeight - 40;
+            scale = Math.min(maxW / img.width, maxH / img.height, 1);
+            applyZoom();
+        };
+
+        const applyZoom = () => {
+            if (!img) return;
+            canvas.style.width = (img.width * scale) + 'px';
+            canvas.style.height = (img.height * scale) + 'px';
+        };
+    </script>
+</body>
+</html>
