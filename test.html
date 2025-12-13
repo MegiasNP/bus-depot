@@ -8,7 +8,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('status').textContent = 'Attempting to fetch image...';
     try {
-        const response = await fetch('yard_layout_NP.jpg');
+        const response = await fetch('yard_layout_NP.png');
         document.getElementById('status').textContent = 'Response: ' + response.status + ' - ' + response.ok;
     } catch (error) {
         document.getElementById('status').textContent = 'Error: ' + error.message;
