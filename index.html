@@ -692,15 +692,23 @@
 
         // File input handler - TRY AUTO-LOAD, FALLBACK TO MANUAL
         window.addEventListener('DOMContentLoaded', async () => {
-            // Try to auto-load the image from GitHub
+            console.log('🚀 START: Page loaded');
             try {
+                console.log('📥 Fetching yard_layout_NP.png...');
                 const response = await fetch('yard_layout_NP.png');
+                console.log('📡 Response:', response.status, response.ok);
+                
                 if (response.ok) {
+                    console.log('✅ Image found, loading blob...');
                     const blob = await response.blob();
+                    console.log('📦 Blob size:', blob.size);
+                    
                     const reader = new FileReader();
                     reader.onload = ev => {
+                        console.log('📖 FileReader loaded');
                         img = new Image();
                         img.onload = () => {
+                            console.log('🖼️ Image dimensions:', img.width, 'x', img.height);
                             canvas.width = img.width;
                             canvas.height = img.height;
                             
@@ -714,31 +722,44 @@
                             document.getElementById('canvasWrapper').style.display = 'block';
                             document.getElementById('zoomControls').style.display = 'flex';
                             
+                            console.log('📊 Loading data...');
                             loadData();
+                            console.log('🎨 Drawing...');
                             draw();
+                            console.log('🎉 SUCCESS: Auto-load complete!');
+                        };
+                        img.onerror = () => {
+                            console.error('❌ Image.onload failed');
                         };
                         img.src = ev.target.result;
                     };
                     reader.readAsDataURL(blob);
                 } else {
-                    // Image not found, enable manual upload
+                    console.warn('⚠️ Response not OK, status:', response.status);
                     setupManualUpload();
                 }
             } catch (error) {
-                // Auto-load failed, enable manual upload
+                console.error('❌ Error in auto-load:', error);
                 setupManualUpload();
             }
         });
         
         function setupManualUpload() {
+            console.log('📤 Setting up manual upload');
+            const prompt = document.getElementById('uploadPrompt');
+            prompt.innerHTML = '<div class="upload-icon">📤</div><div class="upload-text">LOAD DEPOT IMAGE</div><div class="upload-subtext">Click to select yard_layout_NP.png</div><input type="file" id="fileInput" accept="image/*" style="display:none">';
+            prompt.onclick = () => document.getElementById('fileInput').click();
+            
             document.getElementById('fileInput').addEventListener('change', e => {
                 const file = e.target.files[0];
                 if (!file) return;
                 
+                console.log('📁 Manual file selected:', file.name);
                 const reader = new FileReader();
                 reader.onload = ev => {
                     img = new Image();
                     img.onload = () => {
+                        console.log('🖼️ Manual image loaded');
                         canvas.width = img.width;
                         canvas.height = img.height;
                         
@@ -760,391 +781,3 @@
                 reader.readAsDataURL(file);
             });
         }
-
-        // Load data from Google Sheets
-        const loadData = async () => {
-            try {
-                const response = await fetch(SHEET_URL);
-                const data = await response.json();
-                
-                // Clear current assignments
-                Object.keys(assignments).forEach(key => delete assignments[key]);
-                
-                // Load from Google Sheets
-                data.forEach(row => {
-                    if (row.SpotIndex !== '' && row.SpotIndex !== null) {
-                        assignments[row.SpotIndex] = {
-                            fleetNumber: row.FleetNumber,
-                            status: row.Status
-                        };
-                    }
-                });
-                
-                console.log('✅ Loaded from Google Sheets:', Object.keys(assignments).length, 'assignments');
-            } catch (error) {
-                console.log('⚠️ Could not load from Google Sheets, using local storage');
-                const saved = localStorage.getItem('busDepotData');
-                if (saved) {
-                    Object.assign(assignments, JSON.parse(saved));
-                }
-            }
-            updateUI();
-        };
-
-        // Save to Google Sheets
-        const saveData = async () => {
-            // Always save to localStorage as backup
-            localStorage.setItem('busDepotData', JSON.stringify(assignments));
-            
-            // Also save to Google Sheets (no await - fire and forget)
-            try {
-                // This will be called by saveAssignment with specific data
-            } catch (error) {
-                console.log('⚠️ Could not save to Google Sheets');
-            }
-        };
-        
-        // Save single assignment to Google Sheets
-        const saveToSheet = async (spotIndex, fleetNumber, status) => {
-            try {
-                await fetch(SHEET_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        spotIndex: spotIndex,
-                        fleetNumber: fleetNumber,
-                        status: status
-                    })
-                });
-                console.log('✅ Saved to Google Sheets:', fleetNumber, 'at spot', spotIndex);
-            } catch (error) {
-                console.log('⚠️ Could not save to Google Sheets:', error);
-            }
-        };
-        
-        // Delete assignment from Google Sheets
-        const deleteFromSheet = async (spotIndex) => {
-            try {
-                await fetch(SHEET_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        spotIndex: spotIndex,
-                        fleetNumber: '',
-                        status: ''
-                    })
-                });
-                console.log('✅ Deleted from Google Sheets: spot', spotIndex);
-            } catch (error) {
-                console.log('⚠️ Could not delete from Google Sheets:', error);
-            }
-        };
-
-        // Canvas click handler
-        canvas.addEventListener('click', e => {
-            if (!img) return;
-            
-            const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
-            
-            for (let i = 0; i < SPOTS.length; i++) {
-                if (pointInPolygon(x, y, SPOTS[i].points)) {
-                    selectSpot(i);
-                    return;
-                }
-            }
-            
-            deselectSpot();
-        });
-
-        const pointInPolygon = (x, y, points) => {
-            let inside = false;
-            for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
-                const xi = points[i][0], yi = points[i][1];
-                const xj = points[j][0], yj = points[j][1];
-                const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-                if (intersect) inside = !inside;
-            }
-            return inside;
-        };
-
-        const selectSpot = (index) => {
-            selectedSpotIndex = index;
-            const spot = SPOTS[index];
-            const assignment = assignments[index];
-            
-            document.getElementById('assignSection').style.display = 'block';
-            document.getElementById('selectedSpot').textContent = `Spot ${spot.zone}-${String(index + 1).padStart(3, '0')}`;
-            
-            if (assignment) {
-                document.getElementById('fleetInput').value = assignment.fleetNumber;
-                selectStatus(assignment.status);
-            } else {
-                document.getElementById('fleetInput').value = '';
-                selectStatus('FIT');
-            }
-            
-            draw();
-        };
-
-        const deselectSpot = () => {
-            selectedSpotIndex = null;
-            document.getElementById('assignSection').style.display = 'none';
-            draw();
-        };
-
-        const selectStatus = (status) => {
-            selectedStatus = status;
-            document.getElementById('fitBtn').classList.toggle('active', status === 'FIT');
-            document.getElementById('noFitBtn').classList.toggle('active', status === 'NO_FIT');
-        };
-
-        const saveAssignment = async () => {
-            if (selectedSpotIndex === null) return;
-            
-            const fleetNumber = document.getElementById('fleetInput').value.trim().toUpperCase();
-            if (!fleetNumber) {
-                alert('⚠️ Please enter a fleet number');
-                return;
-            }
-            
-            assignments[selectedSpotIndex] = {
-                fleetNumber,
-                status: selectedStatus
-            };
-            
-            // Save to localStorage
-            saveData();
-            
-            // Save to Google Sheets
-            await saveToSheet(selectedSpotIndex, fleetNumber, selectedStatus);
-            
-            updateUI();
-            draw();
-            
-            alert(`✅ ${fleetNumber} assigned to spot ${selectedSpotIndex + 1}`);
-        };
-
-        const clearAssignment = async () => {
-            if (selectedSpotIndex === null) return;
-            
-            if (confirm('Clear this assignment?')) {
-                const spotNum = selectedSpotIndex + 1;
-                const spotToDelete = selectedSpotIndex;
-                
-                delete assignments[selectedSpotIndex];
-                document.getElementById('fleetInput').value = '';
-                
-                // Save to localStorage
-                saveData();
-                
-                // Delete from Google Sheets
-                await deleteFromSheet(spotToDelete);
-                
-                updateUI();
-                
-                // Deselect the spot
-                selectedSpotIndex = null;
-                document.getElementById('assignSection').style.display = 'none';
-                
-                draw();
-                alert(`✅ Spot ${spotNum} cleared successfully`);
-            }
-        };
-
-        const clearAllAssignments = async () => {
-            const count = Object.keys(assignments).length;
-            if (count === 0) {
-                alert('⚠️ No assignments to clear');
-                return;
-            }
-            
-            if (confirm(`Clear ALL ${count} bus assignments?`)) {
-                // Get all spot indices before clearing
-                const spotIndicesToDelete = Object.keys(assignments);
-                
-                // Clear all assignments
-                Object.keys(assignments).forEach(key => delete assignments[key]);
-                
-                // Clear input field
-                document.getElementById('fleetInput').value = '';
-                
-                // Deselect any selected spot
-                selectedSpotIndex = null;
-                document.getElementById('assignSection').style.display = 'none';
-                
-                // Save to localStorage
-                saveData();
-                
-                // Delete all from Google Sheets
-                for (const spotIndex of spotIndicesToDelete) {
-                    await deleteFromSheet(spotIndex);
-                }
-                
-                updateUI();
-                draw();
-                
-                alert(`✅ All ${count} assignments cleared`);
-            }
-        };
-
-        const searchBus = () => {
-            const query = document.getElementById('searchInput').value.trim().toUpperCase();
-            if (!query) return;
-            
-            for (let [index, assignment] of Object.entries(assignments)) {
-                if (assignment.fleetNumber === query) {
-                    selectSpot(parseInt(index));
-                    draw();
-                    return;
-                }
-            }
-            
-            alert(`❌ Bus ${query} not found`);
-        };
-
-        const updateUI = () => {
-            const assignedCount = Object.keys(assignments).length;
-            const fitCount = Object.values(assignments).filter(a => a.status === 'FIT').length;
-            
-            document.getElementById('totalAssigned').textContent = assignedCount;
-            document.getElementById('totalFit').textContent = fitCount;
-            document.getElementById('busCount').textContent = assignedCount;
-            
-            const busList = document.getElementById('busList');
-            if (assignedCount === 0) {
-                busList.innerHTML = `
-                    <div class="empty-state">
-                        No buses assigned yet.<br>
-                        Click on a parking spot to assign a bus.
-                    </div>
-                `;
-            } else {
-                const items = Object.entries(assignments)
-                    .map(([index, assignment]) => {
-                        const spot = SPOTS[index];
-                        return `
-                            <div class="bus-item" onclick="selectSpot(${index})">
-                                <div>
-                                    <div class="bus-fleet">${assignment.fleetNumber}</div>
-                                    <div class="bus-spot">${spot.zone}-${String(parseInt(index) + 1).padStart(3, '0')}</div>
-                                </div>
-                                <div class="bus-status ${assignment.status.toLowerCase().replace('_', '-')}">${assignment.status}</div>
-                            </div>
-                        `;
-                    })
-                    .join('');
-                busList.innerHTML = items;
-            }
-        };
-
-        const draw = () => {
-            if (!img) return;
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            
-            SPOTS.forEach((spot, index) => {
-                const assignment = assignments[index];
-                const isSelected = index === selectedSpotIndex;
-                
-                // Determine color
-                let fillColor, strokeColor;
-                if (isSelected) {
-                    fillColor = 'rgba(255,165,0,0.5)';
-                    strokeColor = '#FFA500';
-                } else if (assignment) {
-                    if (assignment.status === 'FIT') {
-                        fillColor = 'rgba(0,255,136,0.4)';
-                        strokeColor = '#00FF88';
-                    } else {
-                        fillColor = 'rgba(255,59,92,0.4)';
-                        strokeColor = '#FF3B5C';
-                    }
-                } else {
-                    fillColor = 'rgba(0,212,255,0.2)';
-                    strokeColor = '#00D4FF';
-                }
-                
-                // Draw spot
-                ctx.fillStyle = fillColor;
-                ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = isSelected ? 6 : 3;
-                
-                ctx.beginPath();
-                ctx.moveTo(spot.points[0][0], spot.points[0][1]);
-                for (let i = 1; i < 4; i++) {
-                    ctx.lineTo(spot.points[i][0], spot.points[i][1]);
-                }
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                
-                // Draw text
-                const cx = spot.points.reduce((sum, p) => sum + p[0], 0) / 4;
-                const cy = spot.points.reduce((sum, p) => sum + p[1], 0) / 4;
-                
-                const text = assignment ? assignment.fleetNumber : spot.zone;
-                
-                ctx.save();
-                ctx.translate(cx, cy);
-                
-                // Calculate spot dimensions
-                const width = Math.abs(spot.points[1][0] - spot.points[0][0]);
-                const height = Math.abs(spot.points[2][1] - spot.points[1][1]);
-                
-                // Smart rotation based on parking orientation:
-                // - If height > width → VERTICAL parking → Rotate text 90° (a lo largo)
-                // - If width > height → HORIZONTAL parking → Keep text horizontal (a lo ancho)
-                const isVerticalParking = height > width;
-                
-                if (isVerticalParking) {
-                    // Vertical/narrow parking - rotate text 90° to run along the length
-                    ctx.rotate(Math.PI / 2);
-                }
-                // else: horizontal/wide parking - no rotation, text stays horizontal
-                
-                // Use FIXED font size for consistency
-                const fontSize = 16; // Increased size for better visibility
-                
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 3;
-                ctx.font = `bold ${fontSize}px Arial`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                // Draw text with black outline for better visibility
-                ctx.strokeText(text, 0, 0);
-                ctx.fillText(text, 0, 0);
-                
-                ctx.restore();
-            });
-        };
-
-        const zoomIn = () => {
-            scale = Math.min(scale * 1.2, 3);
-            applyZoom();
-        };
-
-        const zoomOut = () => {
-            scale = Math.max(scale / 1.2, 0.3);
-            applyZoom();
-        };
-
-        const resetZoom = () => {
-            const maxW = window.innerWidth - 340;
-            const maxH = window.innerHeight - 40;
-            scale = Math.min(maxW / img.width, maxH / img.height, 1);
-            applyZoom();
-        };
-
-        const applyZoom = () => {
-            if (!img) return;
-            canvas.style.width = (img.width * scale) + 'px';
-            canvas.style.height = (img.height * scale) + 'px';
-        };
-    </script>
-</body>
-</html>
