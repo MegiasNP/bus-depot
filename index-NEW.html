@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚌 Bus Depot Locator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #0A1628;
+            color: white;
+            overflow: hidden;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: 100vh;
+        }
+        .sidebar {
+            background: #1E293B;
+            border-right: 2px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0,212,255,0.3);
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #00D4FF;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94A3B8;
+        }
+        .section {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 0.8rem;
+            color: #00D4FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00D4FF;
+            border: none;
+            color: #0A1628;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: rgba(0,212,255,0.1);
+            border: 2px solid #00D4FF;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #00D4FF;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #00D4FF, #0099CC);
+            color: #0A1628;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,212,255,0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #FF3B5C, #CC2E49);
+            color: white;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,59,92,0.4);
+        }
+        .main {
+            position: relative;
+            background: #0F1923;
+        }
+        #uploadPrompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            cursor: pointer;
+            background: rgba(30,41,59,0.8);
+            padding: 60px;
+            border-radius: 20px;
+            border: 3px dashed rgba(0,212,255,0.3);
+            transition: all 0.3s;
+        }
+        #uploadPrompt:hover {
+            border-color: #00D4FF;
+            background: rgba(30,41,59,0.95);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        .upload-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00D4FF;
+            margin-bottom: 10px;
+        }
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #94A3B8;
+        }
+        #canvasWrapper {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            position: relative;
+        }
+        #canvas {
+            display: block;
+            cursor: crosshair;
+            margin: 20px auto;
+        }
+        .zoom-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30,41,59,0.95);
+            border-radius: 8px;
+            padding: 10px;
+            border: 2px solid rgba(0,212,255,0.3);
+        }
+        .zoom-btn {
+            background: #00D4FF;
+            border: none;
+            color: #0A1628;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .zoom-btn:hover {
+            background: #00EAFF;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1E293B;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            border: 2px solid #00D4FF;
+        }
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #00D4FF;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94A3B8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border: 2px solid transparent;
+            flex: 1;
+            justify-content: center;
+        }
+        .radio-label input {
+            width: 18px;
+            height: 18px;
+        }
+        .radio-label:has(input:checked) {
+            border-color: #00D4FF;
+            background: rgba(0,212,255,0.1);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        .spot-fit { fill: rgba(0,255,136,0.3); stroke: #00FF88; stroke-width: 3; }
+        .spot-nofit { fill: rgba(255,59,92,0.3); stroke: #FF3B5C; stroke-width: 3; }
+        .spot-empty { fill: rgba(0,212,255,0.2); stroke: #00D4FF; stroke-width: 2; }
+        .spot-hover { fill: rgba(0,212,255,0.4); }
+        .spot-highlight { stroke: #FFD700; stroke-width: 4; }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header">
+                <div class="logo">🚌</div>
+                <div class="title">BUS DEPOT</div>
+                <div class="subtitle">Fleet Management System</div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 Statistics</div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalSpots">205</div>
+                        <div class="stat-label">Total Spots</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="occupiedSpots">0</div>
+                        <div class="stat-label">Occupied</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="fitCount">0</div>
+                        <div class="stat-label">FIT</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="nofitCount">0</div>
+                        <div class="stat-label">NO FIT</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔍 Search Fleet</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Enter Fleet Number" onkeypress="if(event.key==='Enter') searchBus()">
+                    <button class="search-btn" onclick="searchBus()">🔎</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎯 Actions</div>
+                <button class="btn btn-danger" onclick="clearAll()">CLEAR ALL</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div id="uploadPrompt">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">LOAD DEPOT IMAGE</div>
+                <div class="upload-subtext">Click to select upscalemedia-transformed.png</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+            </div>
+            <div id="canvasWrapper">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="zoom-controls" id="zoomControls">
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+                <button class="zoom-btn" onclick="zoomOut()">−</button>
+                <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="assignModal">
+        <div class="modal-content">
+            <div class="modal-header">ASSIGN BUS</div>
+            <div class="form-group">
+                <label class="form-label">Spot Number</label>
+                <input type="text" id="spotNumber" class="form-input" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fleet Number</label>
+                <input type="text" id="fleetNumber" class="form-input" placeholder="e.g., EHV123">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="status" value="FIT" checked>
+                        <span>✅ FIT</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="status" value="NO FIT">
+                        <span>❌ NO FIT</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" style="flex:1" onclick="saveAssignment()">SAVE</button>
+                <button class="btn btn-danger" style="flex:1" onclick="clearSpot()">CLEAR SPOT</button>
+                <button class="btn" style="flex:0.5; background:#475569; color:white" onclick="closeModal()">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgnEyDAXRaoN7YsO4Aryw7kMEQzMMeQYxZqlejBFz3_ku1YawtlBVnrL3d41VSjYI/exec';
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let img = null;
+let scale = 1;
+let spots = {};
+let currentSpot = null;
+
+const SPOTS_CONFIG = [
+{"id":"1","x":71,"y":22,"w":27,"h":60},{"id":"2","x":102,"y":22,"w":27,"h":60},{"id":"3","x":133,"y":22,"w":27,"h":60},{"id":"4","x":163,"y":22,"w":27,"h":60},{"id":"5","x":193,"y":22,"w":27,"h":60},{"id":"6","x":223,"y":22,"w":27,"h":60},{"id":"7","x":71,"y":86,"w":27,"h":60},{"id":"8","x":102,"y":86,"w":27,"h":60},{"id":"9","x":133,"y":86,"w":27,"h":60},{"id":"10","x":163,"y":86,"w":27,"h":60},{"id":"11","x":193,"y":86,"w":27,"h":60},{"id":"12","x":223,"y":86,"w":27,"h":60},{"id":"13","x":71,"y":150,"w":27,"h":60},{"id":"14","x":102,"y":150,"w":27,"h":60},{"id":"15","x":133,"y":150,"w":27,"h":60},{"id":"16","x":163,"y":150,"w":27,"h":60},{"id":"17","x":193,"y":150,"w":27,"h":60},{"id":"18","x":223,"y":150,"w":27,"h":60},{"id":"19","x":71,"y":214,"w":27,"h":60},{"id":"20","x":102,"y":214,"w":27,"h":60},{"id":"21","x":133,"y":214,"w":27,"h":60},{"id":"22","x":163,"y":214,"w":27,"h":60},{"id":"23","x":193,"y":214,"w":27,"h":60},{"id":"24","x":223,"y":214,"w":27,"h":60},{"id":"25","x":71,"y":279,"w":27,"h":60},{"id":"26","x":102,"y":279,"w":27,"h":60},{"id":"27","x":133,"y":279,"w":27,"h":60},{"id":"28","x":163,"y":279,"w":27,"h":60},{"id":"29","x":193,"y":279,"w":27,"h":60},{"id":"30","x":223,"y":279,"w":27,"h":60},{"id":"31","x":71,"y":343,"w":27,"h":60},{"id":"32","x":102,"y":343,"w":27,"h":60},{"id":"33","x":133,"y":343,"w":27,"h":60},{"id":"34","x":163,"y":343,"w":27,"h":60},{"id":"35","x":193,"y":343,"w":27,"h":60},{"id":"36","x":223,"y":343,"w":27,"h":60},{"id":"37","x":71,"y":407,"w":27,"h":60},{"id":"38","x":102,"y":407,"w":27,"h":60},{"id":"39","x":133,"y":407,"w":27,"h":60},{"id":"40","x":163,"y":407,"w":27,"h":60},{"id":"41","x":193,"y":407,"w":27,"h":60},{"id":"42","x":223,"y":407,"w":27,"h":60},{"id":"43","x":71,"y":471,"w":27,"h":60},{"id":"44","x":102,"y":471,"w":27,"h":60},{"id":"45","x":133,"y":471,"w":27,"h":60},{"id":"46","x":163,"y":471,"w":27,"h":60},{"id":"47","x":193,"y":471,"w":27,"h":60},{"id":"48","x":223,"y":471,"w":27,"h":60},{"id":"49","x":71,"y":535,"w":27,"h":60},{"id":"50","x":102,"y":535,"w":27,"h":60},{"id":"51","x":133,"y":535,"w":27,"h":60},{"id":"52","x":163,"y":535,"w":27,"h":60},{"id":"53","x":193,"y":535,"w":27,"h":60},{"id":"54","x":223,"y":535,"w":27,"h":60},{"id":"55","x":71,"y":599,"w":27,"h":60},{"id":"56","x":102,"y":599,"w":27,"h":60},{"id":"57","x":133,"y":599,"w":27,"h":60},{"id":"58","x":163,"y":599,"w":27,"h":60},{"id":"59","x":193,"y":599,"w":27,"h":60},{"id":"60","x":223,"y":599,"w":27,"h":60},{"id":"61","x":289,"y":91,"w":60,"h":27},{"id":"62","x":353,"y":91,"w":60,"h":27},{"id":"63","x":417,"y":91,"w":60,"h":27},{"id":"64","x":289,"y":121,"w":60,"h":27},{"id":"65","x":353,"y":121,"w":60,"h":27},{"id":"66","x":417,"y":121,"w":60,"h":27},{"id":"67","x":289,"y":152,"w":60,"h":27},{"id":"68","x":353,"y":152,"w":60,"h":27},{"id":"69","x":417,"y":152,"w":60,"h":27},{"id":"70","x":289,"y":183,"w":60,"h":27},{"id":"71","x":353,"y":183,"w":60,"h":27},{"id":"72","x":417,"y":183,"w":60,"h":27},{"id":"73","x":289,"y":213,"w":60,"h":27},{"id":"74","x":353,"y":213,"w":60,"h":27},{"id":"75","x":417,"y":213,"w":60,"h":27},{"id":"76","x":289,"y":244,"w":60,"h":27},{"id":"77","x":353,"y":244,"w":60,"h":27},{"id":"78","x":417,"y":244,"w":60,"h":27},{"id":"79","x":501,"y":91,"w":60,"h":27},{"id":"80","x":565,"y":91,"w":60,"h":27},{"id":"81","x":629,"y":91,"w":60,"h":27},{"id":"82","x":501,"y":121,"w":60,"h":27},{"id":"83","x":565,"y":121,"w":60,"h":27},{"id":"84","x":629,"y":121,"w":60,"h":27},{"id":"85","x":501,"y":152,"w":60,"h":27},{"id":"86","x":565,"y":152,"w":60,"h":27},{"id":"87","x":629,"y":152,"w":60,"h":27},{"id":"88","x":501,"y":183,"w":60,"h":27},{"id":"89","x":565,"y":183,"w":60,"h":27},{"id":"90","x":629,"y":183,"w":60,"h":27},{"id":"91","x":501,"y":213,"w":60,"h":27},{"id":"92","x":565,"y":213,"w":60,"h":27},{"id":"93","x":629,"y":213,"w":60,"h":27},{"id":"94","x":501,"y":244,"w":60,"h":27},{"id":"95","x":565,"y":244,"w":60,"h":27},{"id":"96","x":629,"y":244,"w":60,"h":27},{"id":"97","x":297,"y":345,"w":27,"h":60},{"id":"98","x":327,"y":345,"w":27,"h":60},{"id":"99","x":357,"y":345,"w":27,"h":60},{"id":"100","x":387,"y":345,"w":27,"h":60},{"id":"101","x":417,"y":345,"w":27,"h":60},{"id":"102","x":447,"y":345,"w":27,"h":60},{"id":"103","x":477,"y":345,"w":27,"h":60},{"id":"104","x":297,"y":409,"w":27,"h":60},{"id":"105","x":327,"y":409,"w":27,"h":60},{"id":"106","x":357,"y":409,"w":27,"h":60},{"id":"107","x":387,"y":409,"w":27,"h":60},{"id":"108","x":417,"y":409,"w":27,"h":60},{"id":"109","x":447,"y":409,"w":27,"h":60},{"id":"110","x":477,"y":409,"w":27,"h":60},{"id":"111","x":297,"y":473,"w":27,"h":60},{"id":"112","x":327,"y":473,"w":27,"h":60},{"id":"113","x":357,"y":473,"w":27,"h":60},{"id":"114","x":387,"y":473,"w":27,"h":60},{"id":"115","x":417,"y":473,"w":27,"h":60},{"id":"116","x":447,"y":473,"w":27,"h":60},{"id":"117","x":477,"y":473,"w":27,"h":60},{"id":"118","x":527,"y":345,"w":27,"h":60},{"id":"119","x":557,"y":345,"w":27,"h":60},{"id":"120","x":587,"y":345,"w":27,"h":60},{"id":"121","x":617,"y":345,"w":27,"h":60},{"id":"122","x":647,"y":345,"w":27,"h":60},{"id":"123","x":527,"y":409,"w":27,"h":60},{"id":"124","x":557,"y":409,"w":27,"h":60},{"id":"125","x":587,"y":409,"w":27,"h":60},{"id":"126","x":617,"y":409,"w":27,"h":60},{"id":"127","x":647,"y":409,"w":27,"h":60},{"id":"128","x":527,"y":473,"w":27,"h":60},{"id":"129","x":557,"y":473,"w":27,"h":60},{"id":"130","x":587,"y":473,"w":27,"h":60},{"id":"131","x":617,"y":473,"w":27,"h":60},{"id":"132","x":647,"y":473,"w":27,"h":60},{"id":"133","x":295,"y":563,"w":27,"h":60},{"id":"134","x":325,"y":563,"w":27,"h":60},{"id":"135","x":355,"y":563,"w":27,"h":60},{"id":"136","x":385,"y":563,"w":27,"h":60},{"id":"137","x":415,"y":563,"w":27,"h":60},{"id":"138","x":445,"y":563,"w":27,"h":60},{"id":"139","x":475,"y":563,"w":27,"h":60},{"id":"140","x":505,"y":563,"w":27,"h":60},{"id":"141","x":535,"y":563,"w":27,"h":60},{"id":"142","x":565,"y":563,"w":27,"h":60},{"id":"143","x":595,"y":563,"w":27,"h":60},{"id":"144","x":625,"y":563,"w":27,"h":60},{"id":"145","x":709,"y":22,"w":60,"h":27},{"id":"146","x":773,"y":22,"w":60,"h":27},{"id":"147","x":709,"y":52,"w":60,"h":27},{"id":"148","x":773,"y":52,"w":60,"h":27},{"id":"149","x":709,"y":83,"w":60,"h":27},{"id":"150","x":773,"y":83,"w":60,"h":27},{"id":"151","x":709,"y":113,"w":60,"h":27},{"id":"152","x":773,"y":113,"w":60,"h":27},{"id":"153","x":709,"y":144,"w":60,"h":27},{"id":"154","x":773,"y":144,"w":60,"h":27},{"id":"155","x":709,"y":175,"w":60,"h":27},{"id":"156","x":773,"y":175,"w":60,"h":27},{"id":"157","x":709,"y":205,"w":60,"h":27},{"id":"158","x":773,"y":205,"w":60,"h":27},{"id":"159","x":709,"y":236,"w":60,"h":27},{"id":"160","x":773,"y":236,"w":60,"h":27},{"id":"161","x":709,"y":267,"w":60,"h":27},{"id":"162","x":773,"y":267,"w":60,"h":27},{"id":"163","x":689,"y":329,"w":27,"h":60},{"id":"164","x":719,"y":329,"w":27,"h":60},{"id":"165","x":749,"y":329,"w":27,"h":60},{"id":"166","x":779,"y":329,"w":27,"h":60},{"id":"167","x":809,"y":329,"w":27,"h":60},{"id":"168","x":689,"y":393,"w":27,"h":60},{"id":"169","x":719,"y":393,"w":27,"h":60},{"id":"170","x":749,"y":393,"w":27,"h":60},{"id":"171","x":779,"y":393,"w":27,"h":60},{"id":"172","x":809,"y":393,"w":27,"h":60},{"id":"173","x":689,"y":457,"w":27,"h":60},{"id":"174","x":719,"y":457,"w":27,"h":60},{"id":"175","x":749,"y":457,"w":27,"h":60},{"id":"176","x":779,"y":457,"w":27,"h":60},{"id":"177","x":809,"y":457,"w":27,"h":60},{"id":"178","x":689,"y":521,"w":27,"h":60},{"id":"179","x":719,"y":521,"w":27,"h":60},{"id":"180","x":749,"y":521,"w":27,"h":60},{"id":"181","x":779,"y":521,"w":27,"h":60},{"id":"182","x":809,"y":521,"w":27,"h":60},{"id":"183","x":863,"y":22,"w":60,"h":27},{"id":"184","x":927,"y":22,"w":60,"h":27},{"id":"185","x":863,"y":52,"w":60,"h":27},{"id":"186","x":927,"y":52,"w":60,"h":27},{"id":"187","x":863,"y":83,"w":60,"h":27},{"id":"188","x":927,"y":83,"w":60,"h":27},{"id":"189","x":863,"y":113,"w":60,"h":27},{"id":"190","x":927,"y":113,"w":60,"h":27},{"id":"191","x":863,"y":144,"w":60,"h":27},{"id":"192","x":927,"y":144,"w":60,"h":27},{"id":"193","x":863,"y":175,"w":60,"h":27},{"id":"194","x":927,"y":175,"w":60,"h":27},{"id":"195","x":863,"y":205,"w":60,"h":27},{"id":"196","x":927,"y":205,"w":60,"h":27},{"id":"197","x":863,"y":236,"w":60,"h":27},{"id":"198","x":927,"y":236,"w":60,"h":27},{"id":"199","x":857,"y":325,"w":27,"h":60},{"id":"200","x":887,"y":325,"w":27,"h":60},{"id":"201","x":917,"y":325,"w":27,"h":60},{"id":"202","x":947,"y":325,"w":27,"h":60},{"id":"203","x":977,"y":325,"w":27,"h":60},{"id":"204","x":1007,"y":325,"w":27,"h":60},{"id":"205","x":1037,"y":325,"w":27,"h":60}
+];
+
+document.getElementById('uploadPrompt').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const maxW = window.innerWidth - 340;
+            const maxH = window.innerHeight - 40;
+            scale = Math.min(maxW / img.width, maxH / img.height, 1);
+            canvas.style.width = (img.width * scale) + 'px';
+            canvas.style.height = (img.height * scale) + 'px';
+            document.getElementById('uploadPrompt').style.display = 'none';
+            document.getElementById('canvasWrapper').style.display = 'block';
+            document.getElementById('zoomControls').style.display = 'flex';
+            loadData();
+            draw();
+        };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+    for (const cfg of SPOTS_CONFIG) {
+        if (x >= cfg.x && x <= cfg.x + cfg.w && y >= cfg.y && y <= cfg.y + cfg.h) {
+            openModal(cfg.id);
+            return;
+        }
+    }
+});
+
+canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+    let found = false;
+    for (const cfg of SPOTS_CONFIG) {
+        if (x >= cfg.x && x <= cfg.x + cfg.w && y >= cfg.y && y <= cfg.y + cfg.h) {
+            found = true;
+            break;
+        }
+    }
+    canvas.style.cursor = found ? 'pointer' : 'crosshair';
+});
+
+function loadData() {
+    fetch(GOOGLE_SCRIPT_URL + '?action=getAll')
+        .then(r => r.json())
+        .then(data => {
+            spots = {};
+            data.forEach(item => {
+                if (item.spotNumber) spots[item.spotNumber] = item;
+            });
+            updateStats();
+            draw();
+        })
+        .catch(err => console.error('Load error:', err));
+}
+
+function saveData(spotNumber, fleetNumber, status) {
+    const data = { action: 'save', spotNumber, fleetNumber, status };
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(() => loadData())
+    .catch(err => console.error('Save error:', err));
+}
+
+function deleteData(spotNumber) {
+    const data = { action: 'delete', spotNumber };
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(() => loadData())
+    .catch(err => console.error('Delete error:', err));
+}
+
+function draw() {
+    if (!img) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    SPOTS_CONFIG.forEach(cfg => {
+        const spot = spots[cfg.id];
+        if (spot && spot.fleetNumber) {
+            ctx.fillStyle = spot.status === 'FIT' ? 'rgba(0,255,136,0.3)' : 'rgba(255,59,92,0.3)';
+            ctx.strokeStyle = spot.status === 'FIT' ? '#00FF88' : '#FF3B5C';
+            ctx.lineWidth = 3;
+        } else {
+            ctx.fillStyle = 'rgba(0,212,255,0.2)';
+            ctx.strokeStyle = '#00D4FF';
+            ctx.lineWidth = 2;
+        }
+        ctx.fillRect(cfg.x, cfg.y, cfg.w, cfg.h);
+        ctx.strokeRect(cfg.x, cfg.y, cfg.w, cfg.h);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cfg.id, cfg.x + cfg.w/2, cfg.y + cfg.h/2);
+    });
+}
+
+function updateStats() {
+    const occupied = Object.keys(spots).filter(k => spots[k].fleetNumber).length;
+    const fit = Object.keys(spots).filter(k => spots[k].status === 'FIT').length;
+    const nofit = Object.keys(spots).filter(k => spots[k].status === 'NO FIT').length;
+    document.getElementById('occupiedSpots').textContent = occupied;
+    document.getElementById('fitCount').textContent = fit;
+    document.getElementById('nofitCount').textContent = nofit;
+}
+
+function openModal(spotId) {
+    currentSpot = spotId;
+    document.getElementById('spotNumber').value = spotId;
+    const spot = spots[spotId];
+    document.getElementById('fleetNumber').value = spot ? spot.fleetNumber : '';
+    if (spot && spot.status) {
+        document.querySelector(`input[value="${spot.status}"]`).checked = true;
+    } else {
+        document.querySelector('input[value="FIT"]').checked = true;
+    }
+    document.getElementById('assignModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('assignModal').style.display = 'none';
+    currentSpot = null;
+}
+
+function saveAssignment() {
+    const fleet = document.getElementById('fleetNumber').value.trim();
+    if (!fleet) { alert('Please enter Fleet Number'); return; }
+    const status = document.querySelector('input[name="status"]:checked').value;
+    saveData(currentSpot, fleet, status);
+    closeModal();
+}
+
+function clearSpot() {
+    if (confirm('Clear this spot?')) {
+        deleteData(currentSpot);
+        closeModal();
+    }
+}
+
+function clearAll() {
+    if (confirm('Clear ALL spots?')) {
+        Promise.all(Object.keys(spots).map(id => deleteData(id)))
+            .then(() => loadData());
+    }
+}
+
+function searchBus() {
+    const search = document.getElementById('searchInput').value.trim().toUpperCase();
+    if (!search) return;
+    const found = Object.keys(spots).find(id => spots[id].fleetNumber && spots[id].fleetNumber.toUpperCase() === search);
+    if (found) {
+        const cfg = SPOTS_CONFIG.find(c => c.id === found);
+        if (cfg) {
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.scrollLeft = (cfg.x * scale) - (wrapper.clientWidth / 2);
+            wrapper.scrollTop = (cfg.y * scale) - (wrapper.clientHeight / 2);
+            openModal(found);
+        }
+    } else {
+        alert('Fleet not found');
+    }
+}
+
+function zoomIn() { scale = Math.min(scale * 1.2, 3); canvas.style.width = (img.width * scale) + 'px'; canvas.style.height = (img.height * scale) + 'px'; }
+function zoomOut() { scale = Math.max(scale / 1.2, 0.3); canvas.style.width = (img.width * scale) + 'px'; canvas.style.height = (img.height * scale) + 'px'; }
+function resetZoom() { scale = 1; canvas.style.width = img.width + 'px'; canvas.style.height = img.height + 'px'; }
+    </script>
+</body>
+</html>
