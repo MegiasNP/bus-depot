@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚌 Bus Depot Locator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #0A1628;
+            color: white;
+            overflow: hidden;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: 100vh;
+        }
+        .sidebar {
+            background: #1E293B;
+            border-right: 2px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0,212,255,0.3);
+        }
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #00D4FF;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94A3B8;
+        }
+        .section {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 0.8rem;
+            color: #00D4FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00D4FF;
+            border: none;
+            color: #0A1628;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-card {
+            background: rgba(0,212,255,0.1);
+            border: 2px solid #00D4FF;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #00D4FF;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #00D4FF, #0099CC);
+            color: #0A1628;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,212,255,0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #FF3B5C, #CC2E49);
+            color: white;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,59,92,0.4);
+        }
+        .main {
+            position: relative;
+            background: #0F1923;
+        }
+        #uploadPrompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            cursor: pointer;
+            background: rgba(30,41,59,0.8);
+            padding: 60px;
+            border-radius: 20px;
+            border: 3px dashed rgba(0,212,255,0.3);
+            transition: all 0.3s;
+        }
+        #uploadPrompt:hover {
+            border-color: #00D4FF;
+            background: rgba(30,41,59,0.95);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        .upload-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00D4FF;
+            margin-bottom: 10px;
+        }
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #94A3B8;
+        }
+        #canvasWrapper {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            position: relative;
+        }
+        #canvas {
+            display: block;
+            cursor: crosshair;
+            margin: 20px auto;
+        }
+        .zoom-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30,41,59,0.95);
+            border-radius: 8px;
+            padding: 10px;
+            border: 2px solid rgba(0,212,255,0.3);
+        }
+        .zoom-btn {
+            background: #00D4FF;
+            border: none;
+            color: #0A1628;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .zoom-btn:hover {
+            background: #00EAFF;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1E293B;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            border: 2px solid #00D4FF;
+        }
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #00D4FF;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94A3B8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border: 2px solid transparent;
+            flex: 1;
+            justify-content: center;
+        }
+        .radio-label input {
+            width: 18px;
+            height: 18px;
+        }
+        .radio-label:has(input:checked) {
+            border-color: #00D4FF;
+            background: rgba(0,212,255,0.1);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header">
+                <div class="logo">🚌</div>
+                <div class="title">BUS DEPOT</div>
+                <div class="subtitle">Fleet Management System</div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">📊 Statistics</div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalSpots">205</div>
+                        <div class="stat-label">Total Spots</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="occupiedSpots">0</div>
+                        <div class="stat-label">Occupied</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="fitCount">0</div>
+                        <div class="stat-label">FIT</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="nofitCount">0</div>
+                        <div class="stat-label">NO FIT</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔍 Search Fleet</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Enter Fleet Number" onkeypress="if(event.key==='Enter') searchBus()">
+                    <button class="search-btn" onclick="searchBus()">🔎</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎯 Actions</div>
+                <button class="btn btn-danger" onclick="clearAll()">CLEAR ALL</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div id="uploadPrompt">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">LOAD DEPOT IMAGE</div>
+                <div class="upload-subtext">Click to select your depot image</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+            </div>
+            <div id="canvasWrapper">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="zoom-controls" id="zoomControls">
+                <button class="zoom-btn" onclick="zoomIn()">+</button>
+                <button class="zoom-btn" onclick="zoomOut()">−</button>
+                <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="assignModal">
+        <div class="modal-content">
+            <div class="modal-header">ASSIGN BUS</div>
+            <div class="form-group">
+                <label class="form-label">Spot Number</label>
+                <input type="text" id="spotNumber" class="form-input" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fleet Number</label>
+                <input type="text" id="fleetNumber" class="form-input" placeholder="e.g., EHV123">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="status" value="FIT" checked>
+                        <span>✅ FIT</span>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="status" value="NO FIT">
+                        <span>❌ NO FIT</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" style="flex:1" onclick="saveAssignment()">SAVE</button>
+                <button class="btn btn-danger" style="flex:1" onclick="clearSpot()">CLEAR SPOT</button>
+                <button class="btn" style="flex:0.5; background:#475569; color:white" onclick="closeModal()">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgnEyDAXRaoN7YsO4Aryw7kMEQzMMeQYxZqlejBFz3_ku1YawtlBVnrL3d41VSjYI/exec';
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let img = null;
+let scale = 1;
+let spots = {};
+let currentSpot = null;
+
+// PASTE YOUR COORDINATES FROM EDITOR HERE:
+const SPOTS_CONFIG = [
+{"id":"1","x":123,"y":456,"w":50,"h":100,"rotation":15},
+{"id":"2","x":789,"y":234,"w":50,"h":100,"rotation":0},
+{"id":"3","x":456,"y":789,"w":50,"h":100,"rotation":90},
+... todas tus 224 coordenadas reales ...
+{"id":"224","x":999,"y":888,"w":50,"h":100,"rotation":0}
+];
+
+document.getElementById('uploadPrompt').onclick = () => document.getElementById('fileInput').click();
+document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const maxW = window.innerWidth - 340;
+            const maxH = window.innerHeight - 40;
+            scale = Math.min(maxW / img.width, maxH / img.height, 1);
+            canvas.style.width = (img.width * scale) + 'px';
+            canvas.style.height = (img.height * scale) + 'px';
+            document.getElementById('uploadPrompt').style.display = 'none';
+            document.getElementById('canvasWrapper').style.display = 'block';
+            document.getElementById('zoomControls').style.display = 'flex';
+            loadData();
+            draw();
+        };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+
+canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+    for (const cfg of SPOTS_CONFIG) {
+        if (isPointInRotatedRect(x, y, cfg)) {
+            openModal(cfg.id);
+            return;
+        }
+    }
+});
+
+function isPointInRotatedRect(px, py, spot) {
+    const cx = spot.x + spot.w / 2;
+    const cy = spot.y + spot.h / 2;
+    const angle = -spot.rotation * Math.PI / 180;
+    const dx = px - cx;
+    const dy = py - cy;
+    const rotX = dx * Math.cos(angle) - dy * Math.sin(angle) + cx;
+    const rotY = dx * Math.sin(angle) + dy * Math.cos(angle) + cy;
+    return rotX >= spot.x && rotX <= spot.x + spot.w && rotY >= spot.y && rotY <= spot.y + spot.h;
+}
+
+function loadData() {
+    fetch(GOOGLE_SCRIPT_URL + '?action=getAll')
+        .then(r => r.json())
+        .then(data => {
+            spots = {};
+            data.forEach(item => {
+                if (item.spotNumber) spots[item.spotNumber] = item;
+            });
+            updateStats();
+            draw();
+        })
+        .catch(err => console.error('Load error:', err));
+}
+
+function saveData(spotNumber, fleetNumber, status) {
+    const data = { action: 'save', spotNumber, fleetNumber, status };
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(() => loadData())
+    .catch(err => console.error('Save error:', err));
+}
+
+function deleteData(spotNumber) {
+    const data = { action: 'delete', spotNumber };
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(data)
+    })
+    .then(() => loadData())
+    .catch(err => console.error('Delete error:', err));
+}
+
+function draw() {
+    if (!img) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+    SPOTS_CONFIG.forEach(cfg => {
+        ctx.save();
+        
+        ctx.translate(cfg.x + cfg.w/2, cfg.y + cfg.h/2);
+        ctx.rotate(cfg.rotation * Math.PI / 180);
+        ctx.translate(-(cfg.x + cfg.w/2), -(cfg.y + cfg.h/2));
+        
+        const spot = spots[cfg.id];
+        if (spot && spot.fleetNumber) {
+            ctx.fillStyle = spot.status === 'FIT' ? 'rgba(0,255,136,0.3)' : 'rgba(255,59,92,0.3)';
+            ctx.strokeStyle = spot.status === 'FIT' ? '#00FF88' : '#FF3B5C';
+            ctx.lineWidth = 3;
+        } else {
+            ctx.fillStyle = 'rgba(0,212,255,0.2)';
+            ctx.strokeStyle = '#00D4FF';
+            ctx.lineWidth = 2;
+        }
+        ctx.fillRect(cfg.x, cfg.y, cfg.w, cfg.h);
+        ctx.strokeRect(cfg.x, cfg.y, cfg.w, cfg.h);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cfg.id, cfg.x + cfg.w/2, cfg.y + cfg.h/2);
+        
+        ctx.restore();
+    });
+}
+
+function updateStats() {
+    const occupied = Object.keys(spots).filter(k => spots[k].fleetNumber).length;
+    const fit = Object.keys(spots).filter(k => spots[k].status === 'FIT').length;
+    const nofit = Object.keys(spots).filter(k => spots[k].status === 'NO FIT').length;
+    document.getElementById('occupiedSpots').textContent = occupied;
+    document.getElementById('fitCount').textContent = fit;
+    document.getElementById('nofitCount').textContent = nofit;
+}
+
+function openModal(spotId) {
+    currentSpot = spotId;
+    document.getElementById('spotNumber').value = spotId;
+    const spot = spots[spotId];
+    document.getElementById('fleetNumber').value = spot ? spot.fleetNumber : '';
+    if (spot && spot.status) {
+        document.querySelector(`input[value="${spot.status}"]`).checked = true;
+    } else {
+        document.querySelector('input[value="FIT"]').checked = true;
+    }
+    document.getElementById('assignModal').style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('assignModal').style.display = 'none';
+    currentSpot = null;
+}
+
+function saveAssignment() {
+    const fleet = document.getElementById('fleetNumber').value.trim();
+    if (!fleet) { alert('Please enter Fleet Number'); return; }
+    const status = document.querySelector('input[name="status"]:checked').value;
+    saveData(currentSpot, fleet, status);
+    closeModal();
+}
+
+function clearSpot() {
+    if (confirm('Clear this spot?')) {
+        deleteData(currentSpot);
+        closeModal();
+    }
+}
+
+function clearAll() {
+    if (confirm('Clear ALL spots?')) {
+        Promise.all(Object.keys(spots).map(id => deleteData(id)))
+            .then(() => loadData());
+    }
+}
+
+function searchBus() {
+    const search = document.getElementById('searchInput').value.trim().toUpperCase();
+    if (!search) return;
+    const found = Object.keys(spots).find(id => spots[id].fleetNumber && spots[id].fleetNumber.toUpperCase() === search);
+    if (found) {
+        const cfg = SPOTS_CONFIG.find(c => c.id === found);
+        if (cfg) {
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.scrollLeft = (cfg.x * scale) - (wrapper.clientWidth / 2);
+            wrapper.scrollTop = (cfg.y * scale) - (wrapper.clientHeight / 2);
+            openModal(found);
+        }
+    } else {
+        alert('Fleet not found');
+    }
+}
+
+function zoomIn() { scale = Math.min(scale * 1.2, 3); canvas.style.width = (img.width * scale) + 'px'; canvas.style.height = (img.height * scale) + 'px'; }
+function zoomOut() { scale = Math.max(scale / 1.2, 0.3); canvas.style.width = (img.width * scale) + 'px'; canvas.style.height = (img.height * scale) + 'px'; }
+function resetZoom() { scale = 1; canvas.style.width = img.width + 'px'; canvas.style.height = img.height + 'px'; }
+    </script>
+</body>
+</html>
