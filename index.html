@@ -3,159 +3,353 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BUS DEPOT - Fleet Management System</title>
+    <title>🚌 Bus Depot Locator</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(to right, #1e3c72, #2a5298);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #0A1628;
             color: white;
-            margin: 0;
+            overflow: hidden;
+        }
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: 100vh;
+        }
+        .sidebar {
+            background: #1E293B;
+            border-right: 2px solid rgba(255,255,255,0.1);
             padding: 20px;
+            overflow-y: auto;
+        }
+        .header {
             text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0,212,255,0.3);
         }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            color: #333;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            margin-top: 50px;
-        }
-        h1 {
-            color: #1e3c72;
-            font-size: 2.8em;
+        .logo {
+            font-size: 3rem;
             margin-bottom: 10px;
         }
-        h2 {
-            color: #2a5298;
-            margin-top: 30px;
+        .title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #00D4FF;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            font-size: 0.85rem;
+            color: #94A3B8;
+        }
+        .section {
+            margin-bottom: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 0.8rem;
+            color: #00D4FF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: bold;
         }
         .search-box {
-            margin: 40px 0;
+            position: relative;
         }
-        #fleetInput {
-            padding: 15px;
-            font-size: 18px;
-            width: 250px;
-            border: 3px solid #1e3c72;
-            border-radius: 8px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 15px 25px;
-            font-size: 18px;
-            background: #1e3c72;
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
             color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #00D4FF;
             border: none;
-            border-radius: 8px;
+            color: #0A1628;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
             cursor: pointer;
-            margin: 5px;
+            font-weight: bold;
         }
-        button:hover {
-            background: #2a5298;
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
         }
-        #result {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f0f8ff;
-            border-radius: 10px;
-            min-height: 300px;
+        .stat-card {
+            background: rgba(0,212,255,0.1);
+            border: 2px solid #00D4FF;
+            border-radius: 6px;
+            padding: 10px;
             text-align: center;
         }
-        .photo-frame {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #00D4FF;
         }
-        .instructions {
-            background: #e8f4fc;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: left;
+        .stat-label {
+            font-size: 0.7rem;
+            color: #94A3B8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #00D4FF, #0099CC);
+            color: #0A1628;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,212,255,0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #FF3B5C, #CC2E49);
+            color: white;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255,59,92,0.4);
+        }
+        .main {
+            position: relative;
+            background: #0F1923;
+        }
+        #uploadPrompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            cursor: pointer;
+            background: rgba(30,41,59,0.8);
+            padding: 60px;
+            border-radius: 20px;
+            border: 3px dashed rgba(0,212,255,0.3);
+            transition: all 0.3s;
+        }
+        #uploadPrompt:hover {
+            border-color: #00D4FF;
+            background: rgba(30,41,59,0.95);
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        .upload-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00D4FF;
+            margin-bottom: 10px;
+        }
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #94A3B8;
+        }
+        #canvasWrapper {
+            display: none;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            position: relative;
+        }
+        #canvas {
+            display: block;
+            cursor: crosshair;
+            margin: 20px auto;
+        }
+        .zoom-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30,41,59,0.95);
+            border-radius: 8px;
+            padding: 10px;
+            border: 2px solid rgba(0,212,255,0.3);
+        }
+        .zoom-btn {
+            background: #00D4FF;
+            border: none;
+            color: #0A1628;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .zoom-btn:hover {
+            background: #00EAFF;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: #1E293B;
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            border: 2px solid #00D4FF;
+        }
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #00D4FF;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: #94A3B8;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #00D4FF;
+        }
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border: 2px solid transparent;
+            flex: 1;
+            justify-content: center;
+        }
+        .radio-label input {
+            width: 18px;
+            height: 18px;
+        }
+        .radio-label:has(input:checked) {
+            border-color: #00D4FF;
+            background: rgba(0,212,255,0.1);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚌 BUS DEPOT</h1>
-        <p><strong>Fleet Management System</strong></p>
-        
-        <div class="search-box">
-            <h2>SEARCH FLEET</h2>
-            <p>Enter fleet number to find vehicle photos</p>
-            <input type="text" id="fleetInput" placeholder="Example: 101, 202, 1001...">
-            <button id="searchBtn">SEARCH</button>
-            <button id="autoBtn">AUTO TEST</button>
-        </div>
-        
-        <div class="instructions">
-            <h3>🔍 How to find your fleet photos:</h3>
-            <ol>
-                <li>Enter a fleet number (try: <strong>101</strong>, <strong>202</strong>, <strong>1001</strong>)</li>
-                <li>Click <strong>SEARCH</strong> - system will test 12+ photo patterns</li>
-                <li>If a photo exists, it will appear below in <span style="color:green;">GREEN</span></li>
-                <li>Click <strong>AUTO TEST</strong> for automatic discovery</li>
-            </ol>
-        </div>
-        
-        <div id="result">
-            <h3>📸 Photo will appear here</h3>
-            <p>Enter a fleet number above to start search</p>
-            <div id="photoContainer"></div>
-            <div id="debugInfo" style="margin-top:20px; font-family:monospace; font-size:12px; text-align:left; background:#f8f9fa; padding:10px; border-radius:5px;"></div>
-        </div>
-        
-        <div style="margin-top:40px; padding-top:20px; border-top:2px solid #eee;">
-            <p><strong>✅ System Status:</strong> GitHub Pages Updated | JavaScript Active</p>
-            <p><small>When a photo pattern is found, we'll update the final code</small></p>
-        </div>
-    </div>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header">
+                <div class="logo">🚌</div>
+                <div class="title">BUS DEPOT</div>
+                <div class="subtitle">Fleet Management System</div>
+            </div>
 
-    <!-- ✅ CONEXIÓN CON EL SISTEMA JAVASCRIPT -->
-    <script src="js/bus-depot.js"></script>
-    
-    <script>
-        // Conexión básica
-        document.getElementById('searchBtn').onclick = function() {
-            const num = document.getElementById('fleetInput').value.trim();
-            if (!num) return alert('Enter a fleet number');
-            
-            document.getElementById('photoContainer').innerHTML = 
-                `<div class="photo-frame">
-                    <h3>Searching for fleet: <strong>${num}</strong></h3>
-                    <p>Testing photo patterns...</p>
-                </div>`;
-            
-            // Si existe la función global searchFleet, la usamos
-            if (typeof window.searchFleet === 'function') {
-                window.searchFleet(num);
-            }
-        };
-        
-        document.getElementById('autoBtn').onclick = function() {
-            document.getElementById('photoContainer').innerHTML = 
-                `<div class="photo-frame">
-                    <h3>🤖 Auto-discovery mode</h3>
-                    <p>Testing common numbers...</p>
-                </div>`;
-            
-            if (typeof window.runAutoTest === 'function') {
-                window.runAutoTest();
-            }
-        };
-        
-        // Buscar con Enter
-        document.getElementById('fleetInput').onkeypress = function(e) {
-            if (e.key === 'Enter') document.getElementById('searchBtn').click();
-        };
-        
-        console.log('✅ Bus Depot HTML interface loaded successfully');
-    </script>
-</body>
-</html>
+            <div class="section">
+                <div class="section-title">📊 Statistics</div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalSpots">205</div>
+                        <div class="stat-label">Total Spots</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="occupiedSpots">0</div>
+                        <div class="stat-label">Occupied</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="fitCount">0</div>
+                        <div class="stat-label">FIT</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="nofitCount">0</div>
+                        <div class="stat-label">NO FIT</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🔍 Search Fleet</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Enter Fleet Number" onkeypress="if(event.key==='Enter') searchBus()">
+                    <button class="search-btn" onclick="searchBus()">🔎</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">🎯 Actions</div>
+                <button class="btn btn-danger" onclick="clearAll()">CLEAR ALL</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div id="uploadPrompt">
+                <div class="upload-icon">📤</div>
+                <div class="upload-text">LOAD DEPOT IMAGE</div>
+                <div class="upload-subtext">Click to select your depot image</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+            </div>
+            <div id="canvasWrapper">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="zo
