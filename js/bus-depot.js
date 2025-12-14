@@ -1,154 +1,133 @@
-// CÓDIGO DETECTIVE MEJORADO - Versión 2
-console.log('🔍 Detective activado - Buscando fotos de flota');
+// BUS DEPOT - Sistema Simple y Visual
+console.log('🚌 Sistema Bus Depot INICIADO');
 
-document.addEventListener('DOMContentLoaded', function() {
-    document.body.innerHTML = `
-        <div style="max-width:800px; margin:20px auto; padding:20px; font-family:Arial;">
-            <h1>🚌 BUS DEPOT - Buscador de Fotos</h1>
-            <p>Se encontró una foto en el sistema: <strong>depot-map(1).jpg</strong></p>
-            <p>Ingresa un número de flota para buscar su foto:</p>
-            
-            <input type="text" id="flotaInput" placeholder="Ej: 101, 202, 305, 1001..." 
-                   style="padding:10px; width:200px; font-size:16px;">
-            <button id="buscarBtn" 
-                    style="padding:10px 20px; background:#4CAF50; color:white; border:none; border-radius:4px; font-size:16px; cursor:pointer;">
-                BUSCAR FOTO
-            </button>
-            
-            <div style="margin-top:30px;">
-                <h3>📍 Foto de referencia encontrada:</h3>
-                <img src="https://megiasnp.github.io/bus-depot/depot-map(1).jpg" 
-                     alt="Mapa del depósito" 
-                     style="max-width:400px; border:2px solid #ccc; margin:10px 0;">
-                <p><small>Esta imagen prueba que las fotos SÍ están en: <code>https://megiasnp.github.io/bus-depot/</code></small></p>
-            </div>
-            
-            <div id="resultado" style="margin-top:30px; padding:20px; background:#f8f9fa; border-radius:8px; min-height:100px;">
-                <p>Los resultados de búsqueda aparecerán aquí...</p>
-            </div>
-            
-            <div style="margin-top:40px; padding:15px; background:#e8f4fc; border-radius:5px; font-size:14px;">
-                <h4>🧩 Patrones que se probarán automáticamente:</h4>
-                <ul>
-                    <li><code>[numero].jpg</code> → Ej: 101.jpg</li>
-                    <li><code>bus-[numero].jpg</code> → Ej: bus-101.jpg</li>
-                    <li><code>flota[numero].jpg</code> → Ej: flota101.jpg</li>
-                    <li><code>[numero]-bus.jpg</code> → Ej: 101-bus.jpg</li>
-                    <li><code>IMG_[numero].jpg</code> → Ej: IMG_101.jpg</li>
-                </ul>
-                <p><strong>Instrucción:</strong> Escribe un número y haz clic en BUSCAR. Si una foto existe, aparecerá en <span style="color:green;">VERDE</span>.</p>
-            </div>
-        </div>
-    `;
-    
-    // PATRONES INTELIGENTES para probar
-    const patrones = [
-        { nombre: 'Numero simple', ruta: (num) => `${num}.jpg` },
-        { nombre: 'bus-Numero', ruta: (num) => `bus-${num}.jpg` },
-        { nombre: 'bus_Numero', ruta: (num) => `bus_${num}.jpg` },
-        { nombre: 'flotaNumero', ruta: (num) => `flota${num}.jpg` },
-        { nombre: 'Numero-bus', ruta: (num) => `${num}-bus.jpg` },
-        { nombre: 'IMG_Numero', ruta: (num) => `IMG_${num}.jpg` },
-        { nombre: 'autobusNumero', ruta: (num) => `autobus${num}.jpg` },
-        { nombre: 'vehiculoNumero', ruta: (num) => `vehiculo${num}.jpg` },
-        // También probar con .png
-        { nombre: 'Numero.png', ruta: (num) => `${num}.png` },
-        { nombre: 'bus-Numero.png', ruta: (num) => `bus-${num}.png` }
-    ];
-    
-    document.getElementById('buscarBtn').onclick = buscarFoto;
-    document.getElementById('flotaInput').onkeypress = function(e) {
-        if (e.key === 'Enter') buscarFoto();
+function mostrarResultado(mensaje, tipo = 'info') {
+    const colores = {
+        info: 'blue',
+        exito: 'green',
+        error: 'red',
+        advertencia: 'orange'
     };
     
-    function buscarFoto() {
-        const numero = document.getElementById('flotaInput').value.trim();
-        const resultadoDiv = document.getElementById('resultado');
-        
-        if (!numero || isNaN(numero)) {
-            resultadoDiv.innerHTML = '<p style="color:red; padding:10px;">⚠️ Ingresa un número válido (ej: 101, 200, 1001)</p>';
-            return;
-        }
-        
-        resultadoDiv.innerHTML = `
-            <h3>🔎 Buscando foto para flota <span style="color:#2c3e50;">${numero}</span>...</h3>
-            <div id="pruebas" style="margin-top:15px;"></div>
-            <hr style="margin:20px 0;">
+    // Crear o actualizar el área de resultados
+    let resultadoDiv = document.getElementById('resultadoBusqueda');
+    if (!resultadoDiv) {
+        resultadoDiv = document.createElement('div');
+        resultadoDiv.id = 'resultadoBusqueda';
+        resultadoDiv.style.cssText = `
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            max-width: 800px;
+            text-align: center;
+            border-left: 5px solid ${colores[tipo]};
         `;
-        
-        const pruebasDiv = document.getElementById('pruebas');
-        let fotosEncontradas = 0;
-        
-        // Probar TODOS los patrones
-        patrones.forEach(patron => {
-            const nombreArchivo = patron.ruta(numero);
-            const urlCompleta = `https://megiasnp.github.io/bus-depot/${nombreArchivo}`;
+        document.body.appendChild(resultadoDiv);
+    }
+    
+    resultadoDiv.innerHTML = `
+        <h3 style="color:${colores[tipo]};">${mensaje.titulo || 'Resultado:'}</h3>
+        <p>${mensaje.texto || ''}</p>
+        ${mensaje.imagen ? `<img src="${mensaje.imagen}" style="max-width:300px; margin:15px 0; border:3px solid ${colores[tipo]};">` : ''}
+        ${mensaje.detalles ? `<div style="background:#f8f9fa; padding:10px; margin-top:10px; text-align:left;">${mensaje.detalles}</div>` : ''}
+    `;
+}
+
+function buscarFlota() {
+    const numero = document.querySelector('input[type="text"]')?.value || '101';
+    
+    if (!numero || isNaN(numero)) {
+        mostrarResultado({
+            titulo: '⚠️ Error',
+            texto: 'Ingresa un número válido (ej: 101, 202, 1001)'
+        }, 'error');
+        return;
+    }
+    
+    mostrarResultado({
+        titulo: '🔍 Buscando...',
+        texto: `Probando fotos para flota <strong>${numero}</strong>`
+    }, 'info');
+    
+    // Patrones comunes a probar
+    const patrones = [
+        `https://megiasnp.github.io/bus-depot/${numero}.jpg`,
+        `https://megiasnp.github.io/bus-depot/bus-${numero}.jpg`,
+        `https://megiasnp.github.io/bus-depot/flota${numero}.jpg`,
+        `https://megiasnp.github.io/bus-depot/${numero}-bus.jpg`,
+        `https://megiasnp.github.io/bus-depot/IMG_${numero}.jpg`,
+        `https://megiasnp.github.io/bus-depot/bus_${numero}.jpg`,
+        `https://megiasnp.github.io/bus-depot/autobus${numero}.jpg`,
+        `https://megiasnp.github.io/bus-depot/${numero}.png`,
+        `https://megiasnp.github.io/bus-depot/bus-${numero}.png`
+    ];
+    
+    let encontrada = false;
+    
+    // Probar cada patrón
+    patrones.forEach((url, index) => {
+        setTimeout(() => {
+            if (encontrada) return;
             
-            // Crear prueba
-            const pruebaDiv = document.createElement('div');
-            pruebaDiv.style.cssText = 'margin:8px 0; padding:10px; border-left:4px solid #ddd;';
-            pruebaDiv.innerHTML = `
-                Probando: <code>${nombreArchivo}</code><br>
-                <small>URL: <a href="${urlCompleta}" target="_blank">${urlCompleta}</a></small>
-                <div class="estado" style="margin-top:5px; font-weight:bold;">⏳ Probando...</div>
-            `;
-            
-            pruebasDiv.appendChild(pruebaDiv);
-            
-            // Intentar cargar la imagen
             const img = new Image();
             img.onload = function() {
-                // ¡ÉXITO! Foto encontrada
-                pruebaDiv.style.borderLeftColor = '#2ecc71';
-                pruebaDiv.style.backgroundColor = '#e8f8ef';
-                pruebaDiv.querySelector('.estado').innerHTML = `
-                    <span style="color:#27ae60;">✅ ¡FOTO ENCONTRADA!</span><br>
-                    <img src="${urlCompleta}" 
-                         style="max-width:250px; margin:10px 0; border:3px solid #27ae60; border-radius:4px;">
-                `;
-                fotosEncontradas++;
+                encontrada = true;
+                mostrarResultado({
+                    titulo: '🎉 ¡FOTO ENCONTRADA!',
+                    texto: `Flota <strong>${numero}</strong> encontrada con patrón: <code>${url.split('/').pop()}</code>`,
+                    imagen: url,
+                    detalles: `✅ ¡ÉXITO! URL: <a href="${url}" target="_blank">${url}</a><br>
+                              Guarda este patrón para el sistema final.`
+                }, 'exito');
                 
-                // Mostrar mensaje de éxito principal
-                if (fotosEncontradas === 1) {
-                    resultadoDiv.innerHTML += `
-                        <div style="background:#d4edda; color:#155724; padding:15px; border-radius:5px; margin-top:15px;">
-                        <h4>🎉 ¡PATRÓN DESCUBIERTO!</h4>
-                        <p>Las fotos de flota se llaman: <code><strong>${nombreArchivo}</strong></code></p>
-                        <p>Guarda esta información. Con este patrón podemos hacer que el sistema funcione completamente.</p>
-                        </div>
-                    `;
-                }
+                // Guardar en consola
+                console.log(`✅ FOTO ENCONTRADA: ${url}`);
             };
             
             img.onerror = function() {
-                // Foto no encontrada con este patrón
-                pruebaDiv.querySelector('.estado').innerHTML = '<span style="color:#95a5a6;">❌ No encontrada</span>';
+                // Solo mostrar el último error si no se encontró nada
+                if (index === patrones.length - 1 && !encontrada) {
+                    mostrarResultado({
+                        titulo: '🤔 No se encontró',
+                        texto: `No hay foto para flota ${numero} con los patrones comunes.`,
+                        detalles: `Patrones probados:<br>${patrones.map(p => `• ${p.split('/').pop()}`).join('<br>')}`
+                    }, 'advertencia');
+                }
             };
             
-            img.src = urlCompleta;
-        });
-        
-        // Si no se encontró ninguna foto después de 3 segundos
-        setTimeout(() => {
-            if (fotosEncontradas === 0) {
-                resultadoDiv.innerHTML += `
-                    <div style="background:#f8d7da; color:#721c24; padding:15px; border-radius:5px; margin-top:20px;">
-                    <h4>🤔 No se encontraron fotos con los patrones comunes</h4>
-                    <p><strong>Sugerencias:</strong></p>
-                    <ol>
-                        <li>Prueba con otros números (100, 200, 1, 2, 10, 20...)</li>
-                        <li>Revisa tu repositorio en GitHub para ver los nombres REALES de las fotos</li>
-                        <li>Las fotos podrían estar en una carpeta (ej: <code>/fotos/</code> o <code>/images/</code>)</li>
-                    </ol>
-                    </div>
-                `;
-            }
-        }, 3000);
+            img.src = url;
+        }, index * 300); // Pequeño retraso entre pruebas
+    });
+}
+
+// Inicializar cuando se cargue la página
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Página cargada, sistema listo');
+    
+    // Crear botón si no existe
+    if (!document.querySelector('button')) {
+        const input = document.querySelector('input[type="text"]');
+        if (input) {
+            const boton = document.createElement('button');
+            boton.textContent = '🔍 BUSCAR FOTO';
+            boton.style.cssText = `
+                padding: 10px 20px;
+                background: #2c3e50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                margin-left: 10px;
+                cursor: pointer;
+                font-size: 16px;
+            `;
+            boton.onclick = buscarFlota;
+            input.parentNode.appendChild(boton);
+        }
     }
     
-    // Probar automáticamente con un número común al cargar
+    // Configurar búsqueda automática al cargar
     setTimeout(() => {
-        document.getElementById('flotaInput').value = '101';
-        document.getElementById('buscarBtn').click();
-    }, 500);
+        buscarFlota();
+    }, 1000);
 });
